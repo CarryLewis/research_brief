@@ -1,0 +1,11 @@
+brief_template: evidence_brief
+citation_style: numbered
+max_sources_in_brief: 20
+require_grounding: true
+output_language: zh
+sections:
+  - key_takeaways
+  - evidence_map
+  - disagreements
+  - open_questions
+  - source_appendix

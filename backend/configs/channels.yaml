@@ -1,0 +1,82 @@
+# 预设信息门户 / 渠道目录。用户可在 UI 中勾选，也可添加自定义网站/Feed。
+channels:
+  - id: pubmed
+    name: PubMed
+    category: academic
+    connector: pubmed
+    description: NCBI 生物医学文献库（官方 API）
+    enabled_by_default: true
+    region: global
+
+  - id: email
+    name: 邮箱订阅
+    category: newsletter
+    connector: email
+    description: IMAP 拉取订阅邮件（Substack / 新闻稿等）
+    enabled_by_default: false
+    region: global
+
+  - id: nih_news
+    name: NIH News
+    category: official
+    connector: rss
+    description: 美国国立卫生研究院新闻稿
+    feed_url: https://www.nih.gov/news-releases/feed.xml
+    enabled_by_default: false
+    region: us
+
+  - id: who_news
+    name: WHO News
+    category: official
+    connector: rss
+    description: 世界卫生组织新闻
+    feed_url: https://www.who.int/rss-feeds/news-english.xml
+    enabled_by_default: false
+    region: global
+
+  - id: nature_news
+    name: Nature News
+    category: journal
+    connector: rss
+    description: Nature 新闻 RSS
+    feed_url: https://www.nature.com/nature.rss
+    enabled_by_default: false
+    region: global
+
+  - id: fda_press
+    name: FDA Press
+    category: official
+    connector: rss
+    description: 美国 FDA 新闻稿 RSS
+    feed_url: https://www.fda.gov/about-fda/contact-fda/stay-informed/rss-feeds/press-releases/rss.xml
+    enabled_by_default: false
+    region: us
+
+  - id: nhc_china
+    name: 国家卫健委
+    category: official
+    connector: web
+    description: 中国国家卫生健康委员会（需配置具体栏目 URL）
+    site_url: http://www.nhc.gov.cn/
+    enabled_by_default: false
+    region: cn
+    note: 建议在自定义渠道中粘贴具体新闻/通告页面 URL
+
+  - id: substack_generic
+    name: Substack（自定义 Feed）
+    category: newsletter
+    connector: rss
+    description: 在「自定义渠道」中添加作者的 /feed URL
+    enabled_by_default: false
+    region: global
+
+  - id: wechat_kazke
+    name: 数字生命卡兹克
+    category: wechat
+    connector: wechat
+    account: 数字生命卡兹克
+    description: 微信公众号「数字生命卡兹克」（Sogou 发现 + 正文抓取；无官方列表 API）
+    max_articles: 5
+    enabled_by_default: false
+    region: cn
+    note: 发现依赖搜狗微信搜索，易限流/验证码；也可在 job 中提供 wechat_urls

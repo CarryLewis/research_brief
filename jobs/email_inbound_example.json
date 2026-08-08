@@ -1,0 +1,9 @@
+{
+  "message_id": "<example-newsletter-001@substack.com>",
+  "from": "Writer Name <writer@substack.com>",
+  "to": "ingest@your.domain",
+  "subject": "Weekly AI Roundup: agents and evals",
+  "text": "This week: new agent frameworks and evaluation tricks.\n\nRead the full post:\nhttps://example.com/p/weekly-ai-roundup\n\nAlso worth reading:\nhttps://example.com/\n\nUnsubscribe: https://list-manage.com/unsubscribe?x=1",
+  "html": "<html><body><p>This week: new agent frameworks and evaluation tricks.</p><p><a href=\"https://example.com/p/weekly-ai-roundup\">Read the full post</a></p><p><a href=\"https://example.com/\">Also worth reading</a></p><p><a href=\"https://list-manage.com/unsubscribe?x=1\">Unsubscribe</a></p></body></html>",
+  "received_at": "2026-07-26T04:00:00Z"
+}

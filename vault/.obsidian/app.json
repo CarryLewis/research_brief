@@ -1,0 +1,11 @@
+{
+  "alwaysUpdateLinks": true,
+  "newFileLocation": "folder",
+  "newFileFolderPath": "Reflections",
+  "attachmentFolderPath": "90_Meta/Attachments",
+  "showFrontmatter": true,
+  "strictLineBreaks": false,
+  "readableLineLength": true,
+  "defaultViewMode": "source",
+  "promptDelete": true
+}

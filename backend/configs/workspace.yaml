@@ -1,0 +1,58 @@
+# Knowledge Workspace Constitution V1 — Research Workspace (Obsidian) config
+# Capture never auto-mirrors Resources into the vault.
+
+folders:
+  projects: Projects
+  concepts: Concepts
+  books: Books
+  reflections: Reflections
+  insights: Insights
+  collections: Collections
+  archive: Archive
+  legacy: Archive/Legacy
+  reports: Reports
+  reports_daily: Reports/Daily
+  reports_weekly: Reports/Weekly
+  reports_monthly: Reports/Monthly
+  reports_annual: Reports/Annual
+  reports_special: Reports/Special Topics
+
+role_folders:
+  concept: Concepts
+  project: Projects
+  reflection: Reflections
+  insight: Insights
+  book: Books
+  report: Reports
+
+suggestion_threshold: 5
+
+filter_tag_allowlist:
+  - medicine
+  - ai
+  - neuroscience
+  - cardiology
+  - neurology
+  - technology
+  - economics
+  - biology
+  - research
+  - clinical
+  - important
+  - todo
+  - review
+  - stroke
+  - ecg
+
+limits:
+  max_filter_tags: 5
+  max_connections: 8
+  max_key_ideas: 12
+
+scaffold_folders: true
+
+# Thinking-first vault: Reflections are freeform and human-owned.
+thinking:
+  reflection_freeform: true
+  preserve_existing_reflection_files: true
+  preserve_human_notes_on_sync: true
