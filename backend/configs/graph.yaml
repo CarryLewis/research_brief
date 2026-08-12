@@ -1,4 +1,7 @@
-# Knowledge Graph Engine — cognitive projection (not visualization)
+# Knowledge Graph Engine — cognitive projection (Constitution V1.1)
+# Objective: meaningful connectivity between Information / Thinking / Research
+# objects — not maximum density, not infrastructure graphs.
+# AI link suggestions are propose-only (human accept required).
 
 # Node weight formula inputs (norms = soft ceilings)
 weight_weights:
@@ -28,30 +31,58 @@ open_question_boost: 10
 answered_question_decay: 0.5
 
 # Named views: node_type allowlists
+# Cognitive defaults exclude resources/reports/infrastructure.
 views:
+  default:
+    node_types: [information, thinking, research, concept, reflection, question, insight, project, book]
+    reflection_min_degree: 0
+  cognitive:
+    node_types: [information, thinking, research, concept, reflection, question, insight, project, book]
+  information:
+    node_types: [information, book]
+  thinking:
+    node_types: [thinking, reflection, concept, question, project]
+  research:
+    node_types: [research, insight, concept, project, question]
+  # Legacy / debug views
   concept:
     node_types: [concept]
-  research:
-    node_types: [project, concept, question]
   reflection:
-    node_types: [reflection, concept]
+    node_types: [reflection, thinking, concept]
   insight:
-    node_types: [insight, concept, project]
+    node_types: [insight, research, concept, project]
   reading:
-    node_types: [book, concept]
+    node_types: [book, information, concept]
   timeline:
-    node_types: [concept, project, question, insight, reflection]
-  governance:
-    node_types: [concept, project, question, insight, reflection]
-  default:
-    node_types: [concept, project, question, insight]
-    reflection_min_degree: 1
+    node_types: [concept, project, question, insight, reflection, thinking, research, information]
   full_thinking:
-    node_types: [concept, project, question, insight, reflection]
+    node_types: [concept, project, question, insight, reflection, thinking]
+  full_cognitive:
+    node_types: [information, thinking, research, concept, project, question, insight, reflection, book]
   with_resources:
-    node_types: [concept, project, question, insight, reflection, book, resource]
+    node_types: [concept, project, question, insight, reflection, thinking, research, book, information, resource]
+  governance:
+    node_types: [concept, project, question, insight, reflection, thinking]
+
+# Never materialize these as cognitive graph nodes merely because they exist
+exclude_infrastructure_labels:
+  - Information
+  - Thinking
+  - Research
+  - Database
+  - Resource
+  - Workspace
+  - Pipeline
+  - API
+  - Template
+  - Status
+  - Content Lake
+  - Inbox
 
 # Auto-sync after lifecycle mutations
 auto_sync_on_mutate: true
+
+# Link suggestions must remain propose-only
+auto_accept_link_suggestions: false
 
 metrics_window_days: 30

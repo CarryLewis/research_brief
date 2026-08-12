@@ -30,37 +30,66 @@ PRIMARY_KINDS = frozenset(
     }
 )
 
-# Roles that may sync into Obsidian Research Workspace
+# Roles that may sync into the Obsidian cognitive vault (V1.1)
+# Legacy typed roles remap to Information / Thinking / Research folders.
 WORKSPACE_NOTE_ROLES = frozenset(
-    {"concept", "project", "reflection", "insight", "book", "report"}
+    {
+        "information",
+        "thinking",
+        "research",
+        "concept",
+        "project",
+        "reflection",
+        "insight",
+        "book",
+        "question",
+        "report",
+    }
 )
-PROMOTE_ROLES = frozenset({"concept", "project", "reflection", "book"})
+# Promote accepts cognitive roles and legacy aliases
+PROMOTE_ROLES = frozenset(
+    {
+        "information",
+        "thinking",
+        "research",
+        "concept",
+        "project",
+        "reflection",
+        "book",
+        "insight",
+    }
+)
 
+# Optional soft vocabulary only — empty config allowlist disables domain enforcement.
+# Kept as a soft union for backward-compatible callers; not a required taxonomy.
 FILTER_TAG_ALLOWLIST = frozenset(
     {
-        "medicine",
-        "ai",
-        "neuroscience",
-        "cardiology",
-        "neurology",
-        "technology",
-        "economics",
-        "biology",
-        "chemistry",
-        "physics",
-        "product",
-        "design",
-        "policy",
-        "education",
-        "climate",
-        "finance",
-        "research",
-        "clinical",
-        "stroke",
-        "ecg",
         "important",
         "todo",
         "review",
+    }
+)
+
+# Folder / type / state tokens that must never become note tags (V1.1 Conflict D)
+_COGNITIVE_FOLDER_TAG_REJECT = frozenset(
+    {
+        "information",
+        "thinking",
+        "research",
+        "resource",
+        "workspace",
+        "pipeline",
+        "database",
+        "inbox",
+        "archived",
+        "concept",
+        "project",
+        "reflection",
+        "insight",
+        "report",
+        "signal",
+        "knowledge-object",
+        "knowledge_object",
     }
 )
 
@@ -108,7 +137,13 @@ def default_workspace_role(kind: str) -> str:
 
 
 def graph_eligible_for_role(role: str) -> int:
-    return 1 if role in {"concept", "project", "reflection", "book"} else 0
+    """Cognitive objects may enter the graph; digests/reports do not."""
+    role = (role or "").lower()
+    if role in {"report", "archived", "resource", "signal"}:
+        return 0
+    if role in WORKSPACE_NOTE_ROLES:
+        return 1
+    return 0
 
 
 def normalize_filter_tags(
@@ -116,9 +151,18 @@ def normalize_filter_tags(
     *,
     max_tags: int = 5,
 ) -> list[str]:
-    """Small filter vocabulary for workspace notes — not type/source namespaces."""
+    """Optional light tags for notes — never a second taxonomy (Constitution V1.1).
+
+    Rejects type/pipeline/folder/state tokens. If ``filter_tag_allowlist`` is empty,
+    only strips rejected tokens (no domain allowlist enforcement).
+    """
     cfg = workspace_config_dict()
-    allow = set(cfg.get("filter_tag_allowlist") or []) | FILTER_TAG_ALLOWLIST
+    cfg_allow = cfg.get("filter_tag_allowlist")
+    # Empty list in config = do not enforce domain allowlist
+    if isinstance(cfg_allow, list) and len(cfg_allow) == 0:
+        allow: set[str] | None = None
+    else:
+        allow = set(cfg_allow or []) | FILTER_TAG_ALLOWLIST
     max_tags = int((cfg.get("limits") or {}).get("max_filter_tags") or max_tags)
     out: list[str] = []
     seen: set[str] = set()
@@ -128,9 +172,15 @@ def normalize_filter_tags(
         if tag and tag not in seen:
             ordered.append(tag)
             seen.add(tag)
-    # Prefer allowlisted
-    for tag in [t for t in ordered if t in allow] + [t for t in ordered if t not in allow]:
-        if tag in _LEGACY_TAG_REJECT:
+    candidates = ordered
+    if allow is not None:
+        candidates = [t for t in ordered if t in allow] + [
+            t for t in ordered if t not in allow
+        ]
+    for tag in candidates:
+        if tag in _LEGACY_TAG_REJECT or tag in _COGNITIVE_FOLDER_TAG_REJECT:
+            continue
+        if "/" in tag:  # reject namespaced implementation tags
             continue
         if tag not in out:
             out.append(tag)
@@ -451,7 +501,12 @@ def promote(
     vault_path: str | None = None,
     sync: bool = True,
 ) -> KnowledgeObject:
-    """Promote a Resource (or any KO) into a first-class workspace note type."""
+    """Promote a Resource (or any KO) into a cognitive vault note.
+
+    Accepts V1.1 roles (information/thinking/research) and legacy aliases
+    (concept/project/reflection/book/insight), which remap to cognitive folders
+    at sync time.
+    """
     role = (role or "").strip().lower()
     if role not in PROMOTE_ROLES:
         raise ValueError(f"role must be one of {sorted(PROMOTE_ROLES)}")
@@ -459,13 +514,29 @@ def promote(
         "concept": "concept",
         "project": "project",
         "reflection": "reflection",
+        "thinking": "reflection",
         "book": "knowledge_object",
+        "information": "knowledge_object",
+        "insight": "insight",
+        "research": "insight",
     }
     to_stage = stage_map.get(role, role)
     to_maturity = "emerging" if role == "concept" else (ko.maturity or "")
 
     ko.workspace_role = role
-    ko.kind = role if role != "book" else (ko.kind if ko.kind == "book" else "book")
+    if role == "book":
+        ko.kind = "book" if ko.kind != "book" else ko.kind
+    elif role == "information":
+        # Keep media kind (article/paper/…) when promoting into Information
+        if not ko.kind or ko.kind in {"resource", "other"}:
+            ko.kind = "article"
+    elif role in {"thinking", "research"}:
+        if role == "thinking" and ko.kind not in {"reflection", "question", "concept"}:
+            ko.kind = "reflection"
+        if role == "research" and ko.kind not in {"insight"}:
+            ko.kind = "insight"
+    elif role not in {"insight"}:
+        ko.kind = role if role != "book" else ko.kind
     ko.graph_eligible = graph_eligible_for_role(role)
     if title:
         ko.title = title.strip()
@@ -503,7 +574,7 @@ def promote(
         life_svc.recompute_concept_scores(db, ko)
     if role == "project":
         life_svc.ensure_project_profile(db, ko)
-    if role == "reflection":
+    if role in {"reflection", "thinking"}:
         from ..db import Reflection
 
         if not db.query(Reflection).filter(Reflection.id == ko.id).first():
@@ -527,9 +598,12 @@ def promote(
 
             vault = get_settings().default_vault_path or None
         if vault:
-            # First materialization of a reflection should write body; later syncs preserve.
+            # First materialization of thinking should write body; later syncs preserve.
             workspace_svc.sync_note(
-                db, ko, vault_path=vault, force=(role == "reflection")
+                db,
+                ko,
+                vault_path=vault,
+                force=(role in {"reflection", "thinking"}),
             )
             db.refresh(ko)
     return ko

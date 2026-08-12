@@ -1,45 +1,43 @@
-# Deprecated filename — see workspace.yaml (Constitution V1).
+# Deprecated filename — see workspace.yaml (Constitution V1.1).
 # Kept so older references keep working via workspace_config_dict fallback merge.
 # Prefer editing workspace.yaml.
 
 folders:
-  projects: Projects
-  concepts: Concepts
-  books: Books
-  reflections: Reflections
-  collections: Collections
+  information: Information
+  thinking: Thinking
+  research: Research
   archive: Archive
   legacy: Archive/Legacy
-  reports: Reports
-  reports_daily: Reports/Daily
-  reports_weekly: Reports/Weekly
-  reports_monthly: Reports/Monthly
-  reports_annual: Reports/Annual
-  reports_special: Reports/Special Topics
+  digests: Archive/Digests
+  meta: 90_Meta
+  attachments: Information/Attachments
+  reports: Archive/Digests
+  reports_daily: Archive/Digests/Daily
+  reports_weekly: Archive/Digests/Weekly
 
 role_folders:
-  concept: Concepts
-  project: Projects
-  reflection: Reflections
-  book: Books
-  report: Reports
+  information: Information
+  thinking: Thinking
+  research: Research
+  reflection: Thinking
+  concept: Thinking
+  project: Thinking
+  book: Information
+  insight: Research
+  report: Archive/Digests
 
 suggestion_threshold: 5
-
-filter_tag_allowlist:
-  - medicine
-  - ai
-  - neuroscience
-  - cardiology
-  - neurology
-  - technology
-  - important
-  - todo
-  - review
-
+filter_tag_allowlist: []
 limits:
-  max_filter_tags: 5
+  max_filter_tags: 3
   max_connections: 8
   max_key_ideas: 12
-
 scaffold_folders: true
+scaffold_only:
+  - Information
+  - Thinking
+  - Research
+  - Archive
+  - Archive/Digests
+  - 90_Meta
+  - Information/Attachments

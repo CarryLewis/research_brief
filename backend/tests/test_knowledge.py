@@ -15,12 +15,25 @@ def test_infer_kind_from_connector():
 
 def test_normalize_filter_tags_no_type_spam():
     tags = knowledge_svc.normalize_filter_tags(
-        ["AI", "type/raw-text", "cardiology", "paper", "important", "noise"],
+        [
+            "AI",
+            "type/raw-text",
+            "cardiology",
+            "paper",
+            "important",
+            "noise",
+            "information",
+            "thinking",
+            "inbox",
+        ],
         max_tags=5,
     )
     assert "paper" not in tags
     assert "raw-text" not in tags
-    assert "ai" in tags or "cardiology" in tags
+    assert "information" not in tags
+    assert "thinking" not in tags
+    assert "inbox" not in tags
+    assert "ai" in tags or "cardiology" in tags or "important" in tags
     assert len(tags) <= 5
 
 
@@ -67,7 +80,8 @@ def test_suggestions_without_concept_files(db_session, vault_path):
     assert len(sug) == 1
     assert sug[0].entity_name == "Migraine"
     assert sug[0].mention_count >= 5
-    # No Concepts note created
+    # No Thinking note auto-created from suggestions
+    assert not list((vault_path / "Thinking").glob("*.md"))
     assert not list((vault_path / "Concepts").glob("*.md"))
 
 
@@ -108,11 +122,10 @@ def test_promote_to_concept(db_session, vault_path):
     assert ko.workspace_role == "concept"
     assert ko.graph_eligible == 1
     assert ko.vault_path
-    note = (vault_path / ko.vault_path)
+    note = vault_path / ko.vault_path
     assert note.is_file()
-    assert note.parent.name == "Concepts"
+    assert note.parent.name == "Thinking"
     body = note.read_text(encoding="utf-8")
-    assert "type: concept" in body
-    assert "graph: true" in body
     assert "## Key Ideas" in body
     assert "About stroke." not in body
+    assert "Short summary" in body

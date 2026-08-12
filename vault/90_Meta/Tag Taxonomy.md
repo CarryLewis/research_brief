@@ -1,21 +1,23 @@
 ---
-title: Tag Taxonomy
+title: Tag Guidance
 type: meta
-tags:
-  - meta
-updated: 2026-08-02
+updated: 2026-08-12
 ---
 
-# Tags are filters
+# Tags (optional, not a taxonomy)
 
-Keep the vocabulary small. Tags are not a database schema.
+Constitution V1.1: tags must not become a second hidden classification system.
 
-## Recommended
+Prefer:
 
-`medicine` · `ai` · `neuroscience` · `cardiology` · `neurology` · `technology` · `important` · `todo` · `review`
+- Folder role: Information / Thinking / Research
+- Explicit `[[wikilinks]]` between independent objects
 
-## Do not use
+Avoid tagging:
 
-- Type tags (`paper`, `article`, `newsletter`) — use the `type` field
-- Pipeline tags (`source/pubmed`, `type/raw-text`, `topic/…`)
-- Dozens of auto-generated descriptive tags
+- Folder names (`information`, `thinking`, `research`)
+- Object types (`paper`, `article`, `concept`, `resource`)
+- Database / pipeline states (`inbox`, `signal`, `ready`)
+- Generic domain forests that only duplicate what links already express
+
+If you use a tag, keep it rare and purposeful (e.g. a personal `todo`). The system will not require a domain allowlist.

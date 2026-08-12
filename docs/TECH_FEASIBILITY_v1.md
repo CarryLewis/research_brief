@@ -44,6 +44,7 @@ Matter 自身也承认：网页解析前 80–90% 相对容易，**最后一公�
 |-------------------------|--------|
 | 一键保存网页到私人库 | 独立 iOS/Web 阅读 App |
 | 正文 + 图片可读落盘（Obsidian） | Matter 级排版与 TTS |
+| **V1.1:** 写入 `Information/`（扁平；取代 `Library/{Articles,Emails,Books}`） | 见 [`OBSIDIAN_CONSTITUTION_V1_1.md`](architecture/OBSIDIAN_CONSTITUTION_V1_1.md) |
 | 邮件/newsletter 入库 | 关注作者 / 社交阅读 |
 | 轻量高亮与批注 | App 内长按高亮手势引擎 |
 | 书名 → 书目卡片 | 全书 OCR / EPUB 阅读器 |

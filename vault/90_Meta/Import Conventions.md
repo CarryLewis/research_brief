@@ -1,61 +1,71 @@
 ---
 title: Import Conventions
 type: meta
-tags:
-  - meta
-updated: 2026-08-02
+updated: 2026-08-12
 ---
 
 # Pipeline rules (not a writing checklist)
 
-These constrain capture/sync. They are **not** how you should write day to day.
+Constitution V1.1 — cognitive vault. These constrain capture/sync. They are **not** how you should write day to day.
 
-## Where to write
+## Where notes live
 
 | Folder | Purpose |
 |--------|---------|
-| `Reflections/` | Freeform thinking. Title + body. System will not wipe your file on bulk sync. |
-| `Concepts/` / `Projects/` / `Books/` | Slim structured notes after ideas settle. Your `## Notes` section is preserved on sync. |
-| `Collections/` | Human indexes only |
-| `Archive/` | Legacy dumps — not for new thinking |
+| `Information/` | External world — readable captures. Flat. No medium subfolders required. |
+| `Thinking/` | Personal observations, reflections, questions, fragments. |
+| `Research/` | Mature syntheses / Research Briefs. |
+| `Archive/` | Cold legacy only — not for new thinking. |
+| `90_Meta/` | System conventions — not cognitive graph nodes. |
+
+No living `Inbox/`. No domain folders (`Medicine/`, `AI/`, …).
 
 ## Capture path
 
-1. Capture → Content Lake + Resource KO (**database only**)
-2. AI may summarize & suggest Concepts (**database only**)
-3. You promote → a vault note appears
-4. Digests → `Reports/` (`graph: false`)
+1. Capture → Content Lake (bytes) + Knowledge Object (DB)
+2. Readable body → `Information/` note (human-readable identity = filename)
+3. Thinking capture → `Thinking/` (after confirm when AI-assisted)
+4. AI may **propose** links; you accept / reject / ignore
+5. Research Briefs → `Research/` when synthesis is warranted
 
-Articles, papers, RSS, emails stay **Resources** in the DB. Do not re-import them into the vault.
+Digests (if any) land under `Archive/Digests/` — not the cognitive graph.
 
 ## Note shapes
 
-**Reflection** (freeform):
+**Information** (minimal frontmatter):
 
 ```markdown
 ---
+id: lib_…
 title: "Natural Title"
-type: reflection
-date: YYYY-MM-DD
-graph: true
+source_url: …
+captured_at: …
+visibility: private
 ---
 
 # Natural Title
 
-Write anything.
+Readable body…
+
+## Highlights
+
+## Notes
 ```
 
-**Concept / Project / Book** (slim):
+**Thinking** (fragments allowed):
 
 ```markdown
-## Summary
-## Key Ideas
-## Connections
-## Notes          ← your thinking (preserved on sync)
-## References     ← URLs only, never lake: ids
+---
+title: "Natural Title"
+date: YYYY-MM-DD
+---
+
+# Natural Title
+
+Write anything. Incomplete is fine.
 ```
 
-## Tags
+## Links & tags
 
-Small filter vocabulary only (`medicine`, `neurology`, `research`, …).  
-Do not use type tags like `paper` / `article` in frontmatter.
+Explicit `[[wikilinks]]` create the cognitive graph.  
+Tags are optional and must not duplicate folders, types, or database states.

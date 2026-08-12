@@ -1,13 +1,15 @@
-# Research Brief — Knowledge OS Architecture (Canonical)
+# Research Brief — Knowledge OS Architecture (System baseline)
 
-**Status:** Living document. Synthesizes completed plans into one baseline that matches the current codebase (2026-08).
+**Status:** Living document for **system architecture** (Content Lake, Knowledge Database, Lifecycle, Graph Engine).  
+**Obsidian-facing SoT (supersedes §1 Obsidian principle + §6 below):** [`architecture/OBSIDIAN_CONSTITUTION_V1_1.md`](architecture/OBSIDIAN_CONSTITUTION_V1_1.md)  
+**Conflict reconciliation:** [`architecture/OBSIDIAN_CONSTITUTION_CONFLICTS.md`](architecture/OBSIDIAN_CONSTITUTION_CONFLICTS.md)
 
-**Source plans (historical; do not treat as current SoT):**
+**Source plans (historical; do not treat as current Obsidian SoT):**
 
 | Plan | Contribution |
 |------|----------------|
 | Obsidian Thinking Workspace | Content Lake + Knowledge Object spine; Obsidian as projection |
-| Workspace Constitution V1 | Curated Research Workspace; Resources never auto-dump; promote/suggest |
+| Workspace Constitution V1 | Curated Research Workspace; Resources never auto-dump; promote/suggest — **Obsidian rules superseded by V1.1** |
 | Lifecycle Engine Design | Intellectual lifecycle, maturity, history, Reflection/Question/Insight |
 | Knowledge Graph Engine V1 | Cognitive graph projection; views/metrics/API independent of visualization |
 
@@ -15,11 +17,11 @@
 
 ## 1. First principles
 
-1. **Obsidian is not a content repository.** It is the Thinking Workspace.
-2. **Raw bytes belong in the Content Lake** (immutable, write-once).
+1. ~~**Obsidian is not a content repository.** It is the Thinking Workspace.~~ **Superseded (V1.1):** Obsidian is the local cognitive storage layer — `Information/` + `Thinking/` + `Research/`. Capture may write readable Information notes. See Constitution V1.1.
+2. **Raw bytes belong in the Content Lake** (immutable, write-once). Lake paths are not vault/graph nodes.
 3. **Structured memory belongs in the Knowledge Database** (SQLite).
 4. **Knowledge is not static.** The product records and supports the *evolution of understanding*.
-5. **AI proposes; humans confirm** for Concept maturity, Insight creation, and vault promotion.
+5. **AI proposes; humans confirm** for Concept maturity, Insight creation, vault materialization, and non-obvious graph links.
 
 Success criteria shift from “What documents do I have?” to:
 
@@ -62,14 +64,14 @@ flowchart TD
 | **Content Lake** | Immutable bytes | Originals / media under `DATA_DIR/content_lake` |
 | **Knowledge Database** | Structured memory | All KOs, edges, profiles, events, suggestions, SourceDoc/chunks |
 | **Graph Engine** | Cognitive projection | Filtered nodes/edges, weights, communities, metrics (JSON API) |
-| **Research Workspace** | Thinking surface | Curated Obsidian notes only |
+| **Cognitive Vault (Obsidian)** | Human-readable cognitive objects | `Information/` · `Thinking/` · `Research/` (V1.1) |
 
 **Orthogonal bindings (never collapse):**
 
 | Field | Meaning |
 |-------|---------|
 | `lifecycle_stage` | Intellectual state in the DB |
-| `workspace_role` | Whether / how the object syncs to Obsidian |
+| `workspace_role` | Backend presentation hint; vault folder = cognitive role (`information` / `thinking` / `research`) per V1.1 |
 | Graph inclusion / `graph_layer` | Cognitive visibility (computed on sync; ≠ `workspace_role`) |
 | `primary_content_uri` / Lake | Raw authority |
 | `kind` | Medium / type (`paper`, `book`, …) |
@@ -189,47 +191,55 @@ Thresholds (config): candidate ≥ 20, emerging ≥ 40, stable ≥ 65, core ≥ 
 
 ---
 
-## 6. Research Workspace (Constitution)
+## 6. Research Workspace (Constitution V1) — SUPERSEDED
 
-### Vault roots
+> **Superseded for Obsidian-facing rules by [Constitution V1.1](architecture/OBSIDIAN_CONSTITUTION_V1_1.md).**  
+> The typed folder forest and “Resources never sync” rule below are historical. Do not implement new vault UX against this section.  
+> Conflict decisions: [OBSIDIAN_CONSTITUTION_CONFLICTS.md](architecture/OBSIDIAN_CONSTITUTION_CONFLICTS.md).
+
+### V1.1 vault roots (current)
+
+```text
+Information/
+Thinking/
+Research/
+Archive/           # cold legacy only
+90_Meta/           # system conventions only
+```
+
+### Legacy V1 vault roots (historical)
 
 ```text
 Projects/
 Concepts/
 Books/
 Reflections/
-Insights/          # optional; only if lifecycle.sync_insights_to_vault
-Reports/Daily|Weekly|Monthly|Annual|Special Topics/
-Collections/       # human-only; system never writes
-Archive/
-  Legacy/          # pre-redesign 01_Raw
-  PreConstitution-Inbox/
+Insights/
+Reports/…
+Collections/
+Archive/Legacy|PreConstitution-Inbox/
 90_Meta/
 ```
 
-### `workspace_role` → sync
+### Legacy `workspace_role` → sync (historical)
 
-| Role | Obsidian | Notes |
-|------|----------|-------|
-| `resource` | Never | Capture default |
-| `concept` / `project` / `reflection` / `book` | Sync | Graph nodes (`graph: true`) |
-| `insight` | Sync only if enabled | Default off; else DB-first or reflection-linked |
-| `report` | Sync via digest | `graph: false` |
-| `archived` | Archive folder | Demote path |
+| Role | Obsidian (V1) | V1.1 mapping |
+|------|---------------|--------------|
+| `resource` | Never | Readable notes via Information capture path |
+| `concept` / `project` / `reflection` | Typed folders | → `Thinking/` (idea notes) |
+| `book` | `Books/` | → `Information/` |
+| `insight` | optional `Insights/` | → `Research/` |
+| `report` | `Reports/` | → `Archive/Digests/` (not cognitive graph) |
+| `archived` | Archive | Archive (unchanged) |
 
-**Thinking-first note shapes:**
+**Locked defaults retained under V1.1:**
 
-- **Reflection** — human-owned freeform (minimal frontmatter + body from `reflections.body_md`). Bulk `workspace sync` does **not** overwrite existing reflection files; API create/update may force-write.
-- **Concept / Project / Book** — slim skeleton: Summary, Key Ideas, Connections, Notes, References (+ Objectives/Roadmap for projects; Reading Progress/Highlights for books). On sync, machine sections refresh; `## Notes` (or legacy `## My Reflection`) is preserved.
-
-**Locked defaults:**
-
-- Capture never writes Concept/Inbox dumps.
-- AI never auto-creates Concept/Project/Reflection vault notes.
-- Wikilinks only to existing workspace notes (or intentional titles).
-- Tags = small filter allowlist (not type spam).
-- Natural titles; no `01_pubmed_` / KO-id suffixes (collision → short title disambiguator).
+- No living `Inbox/`; Capture → Processing → Information / Thinking.
+- AI never auto-dumps Concept forests or uncontrolled wikilinks.
+- Wikilinks only to existing notes (or intentional titles).
+- Natural titles; no artificial ID filenames.
 - References are URLs only — never `lake:` ids.
+- Tags must not become a second taxonomy.
 
 ---
 
@@ -347,10 +357,11 @@ SQLite: `create_all` + `_migrate_sqlite_columns` ALTER helpers. No Postgres requ
 Derived cognitive projection (rebuildable SQLite + JSON API). Not Obsidian Graph / React Flow / D3 / Neo4j.
 
 - Tables: `graph_nodes`, `graph_edges`, `graph_communities`, `graph_metrics_snapshots`, `graph_sync_runs`
-- Layers L1–L6; Signals never shown; Resources hidden unless `with_resources`
-- Views: `default`, `concept`, `research`, `reflection`, `insight`, `reading`, `timeline`, `governance`, `full_thinking`, `with_resources`
-- Sync from KO + KoLink; weights, communities (connected components), governance metrics
-- AI maintenance via `LifecycleProposal.payload_json.graph_action` (propose-only)
+- Cognitive objective (V1.1): meaningful links between independent Information / Thinking / Research objects — not infrastructure graphs
+- Signals never shown; resources/reports not default cognitive nodes
+- Views: prefer `default`, `thinking`, `research`, `information`, `full_cognitive`; legacy type views may remain for debugging
+- Sync from KO + KoLink; weights, communities; **no folder/DB/pipeline/status nodes**
+- AI maintenance via `LifecycleProposal.payload_json.graph_action` (**propose-only**; human accept)
 - Config: [`backend/configs/graph.yaml`](../backend/configs/graph.yaml)
 
 ---
@@ -372,11 +383,12 @@ Derived cognitive projection (rebuildable SQLite + JSON API). Not Obsidian Graph
 - Bi-directional Obsidian ↔ DB reflection sync protocol
 - pgvector / full embedding redesign
 - Auto-writing hundreds of Concept notes
-- Auto-migration of Legacy `01_Raw` / PreConstitution Inbox into Concepts
-- Replacing Constitution folder purpose rules
-- Notion / Zotero / website UI as primary surfaces
-- Graph visualization clients (Obsidian Graph, React Flow, D3, Cytoscape, Neo4j Browser)
+- Auto-migration of Legacy `01_Raw` / PreConstitution Inbox into Concepts (or uncontrolled Information dumps)
+- Reintroducing typed Constitution folder forests as daily IA
+- Notion / Zotero as primary surfaces
+- Graph visualization clients (Obsidian Graph, React Flow, D3, Cytoscape, Neo4j Browser) as architecture dependencies
 - Server-side force-directed layout as a product dependency
+- Automatic AI link explosions or infrastructure nodes in the cognitive graph
 
 ---
 

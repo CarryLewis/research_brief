@@ -1,79 +1,67 @@
-# Research Brief Studio — Knowledge OS
+# Research Brief Studio — Personal Observatory
 
-Canonical architecture (all plan versions merged): **[docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)**
+**Obsidian-facing architecture:** [`docs/architecture/OBSIDIAN_CONSTITUTION_V1_1.md`](docs/architecture/OBSIDIAN_CONSTITUTION_V1_1.md)  
+**Conflict reconciliation:** [`docs/architecture/OBSIDIAN_CONSTITUTION_CONFLICTS.md`](docs/architecture/OBSIDIAN_CONSTITUTION_CONFLICTS.md)  
+**System architecture (Lake / KO / Lifecycle / Graph Engine):** [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md)  
+**Product Capture · Annotate · Publish:** [`docs/PRODUCT_v1.md`](docs/PRODUCT_v1.md)
 
-Four layers + intellectual lifecycle:
+Layers:
 
-1. **Content Lake** — immutable originals (`DATA_DIR/content_lake`)
-2. **Knowledge Database** — SQLite Knowledge Objects, edges, maturity, history
-3. **Graph Engine** — cognitive projection (JSON API; not Obsidian Graph)
-4. **Research Workspace** — Obsidian thinking surface (curated note types only)
-
-Capture never mirrors articles/papers into Obsidian. Promote deliberately. AI proposes; humans confirm maturity and Insights.
+1. **Content Lake** — immutable originals (`DATA_DIR/content_lake`) — backend only
+2. **Knowledge Database** — SQLite Knowledge Objects, edges, proposals
+3. **Graph Engine** — cognitive projection (JSON API; propose links; no infrastructure nodes)
+4. **Cognitive Vault (Obsidian)** — `Information/` · `Thinking/` · `Research/`
 
 ```text
-Signal → Resource → Knowledge Object → Reflection → Concept → Project → Insight
-                                              ↘ Question ↗
+Observe → Capture → Information
+Experience → Conversation → Thinking
+Connections accumulate → Research Brief (synthesis)
 ```
+
+AI proposes relationships; humans accept meaningful links. No Inbox dump. No domain folder taxonomy.
 
 ## Quick start
 
 ```bash
 cd backend && source .venv/bin/activate
 
-# Capture → Lake + Resource/Signal KO (vault unchanged)
+# Capture → Lake + KO; Library/save writes Information/ notes
 python -m app.cli.collect --job ../jobs/nature_migraine.yaml --no-media
 
-# Lifecycle
+# Lifecycle (backend; not daily vault bureaucracy)
 python -m app.cli.lifecycle backfill
 python -m app.cli.lifecycle evaluate --notebook nb_xxx
 python -m app.cli.lifecycle proposals
-python -m app.cli.lifecycle accept --proposal lpr_xxx --vault ../vault
-python -m app.cli.lifecycle evolution --ko ko_xxx
-python -m app.cli.lifecycle central
-python -m app.cli.lifecycle filter-signal --ko ko_xxx
-python -m app.cli.lifecycle assist-reflection --id ko_xxx
-python -m app.cli.lifecycle project-context --id ko_xxx
-python -m app.cli.lifecycle draft-insight --notebook nb_xxx --support ko_a,ko_b
 
-# Workspace curation
-python -m app.cli.workspace suggestions
-python -m app.cli.workspace promote --id ko_xxx --role concept --vault ../vault
+# Workspace sync → Thinking / Research cognitive folders
 python -m app.cli.workspace sync --notebook nb_xxx --vault ../vault
 
-# Digests → Reports/ (graph: false)
-python -m app.cli.digest --period daily --dry-run
-
-# Cognitive graph (portable JSON — no visualization)
+# Cognitive graph (portable JSON — propose-only AI links)
 python -m app.cli.graph sync --notebook nb_xxx
-python -m app.cli.graph view --view research --notebook nb_xxx --fresh
-python -m app.cli.graph neighborhood --ko ko_xxx --depth 2
-python -m app.cli.graph metrics --notebook nb_xxx
+python -m app.cli.graph view --view default --notebook nb_xxx --fresh
 python -m app.cli.graph suggest-links --notebook nb_xxx
 
 # API
 uvicorn app.main:app --app-dir backend --reload --port 8000
 ```
 
-### Vault layout
+### Vault layout (Constitution V1.1)
 
 ```text
-Reflections/                 # freeform thinking (daily home)
-Projects/  Concepts/  Books/
-Insights/                    # optional
-Reports/Daily|Weekly/…
-Collections/                 # human only
-Archive/Legacy|PreConstitution-Inbox/
-90_Meta/
+Information/                 # external world — readable captures
+Thinking/                    # personal reflections, questions, fragments
+Research/                    # mature syntheses / Research Briefs
+Archive/                     # cold legacy only
+90_Meta/                     # system conventions (not cognitive nodes)
 ```
 
 ## Config
 
 | File | Role |
 |------|------|
-| [`backend/configs/workspace.yaml`](backend/configs/workspace.yaml) | Obsidian folders, tags, suggestion threshold |
+| [`backend/configs/workspace.yaml`](backend/configs/workspace.yaml) | Cognitive vault folders, sync limits |
 | [`backend/configs/lifecycle.yaml`](backend/configs/lifecycle.yaml) | Stages, scoring, signal connectors, AI flags |
-| [`backend/configs/graph.yaml`](backend/configs/graph.yaml) | Graph views, weight formula, auto-sync |
+| [`backend/configs/graph.yaml`](backend/configs/graph.yaml) | Graph views, weight formula, anti-pollution |
 | [`backend/configs/channels.yaml`](backend/configs/channels.yaml) | Connectors |
 | [`.env.example`](.env.example) | `DEFAULT_VAULT_PATH`, `CONTENT_LAKE_DIR`, LLM, inbound, digest |
 
@@ -82,9 +70,9 @@ Archive/Legacy|PreConstitution-Inbox/
 | Milestone | Idea |
 |-----------|------|
 | Thinking Workspace | Raw out of Obsidian; Content Lake + KO spine |
-| Constitution V1 | Only Concept/Project/Reflection/Book/Report sync; Resources stay in DB |
-| Lifecycle Engine | Stages, maturity scores, append-only history, Reflection/Question/Insight |
-| Lifecycle AI | Signal filter, question assist, project context pack, insight drafts |
-| Graph Engine V1 | Cognitive projection, named views, metrics, communities, graph API |
+| Constitution V1 | Typed Concepts/Projects/…; Resources stay in DB — **superseded for vault UX** |
+| PRODUCT_v1 Library | Capture writes readable notes — **path remapped to Information/** |
+| Lifecycle + Graph Engine | Backend evolution + propose-only cognitive graph |
+| **Constitution V1.1** | Minimal vault: Information / Thinking / Research; quality over density |
 
-Details, entity schemas, APIs, migration, and non-goals: **[docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)**.
+Details: **[docs/architecture/OBSIDIAN_CONSTITUTION_V1_1.md](docs/architecture/OBSIDIAN_CONSTITUTION_V1_1.md)**.

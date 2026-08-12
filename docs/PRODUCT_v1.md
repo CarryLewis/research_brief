@@ -4,8 +4,9 @@
 **Date:** 2026-08  
 **Scope:** Product positioning, workflows, interaction, presentation. Not an implementation plan.
 
-> **Source of truth for v1 product decisions:** this document.  
-> **[`ARCHITECTURE.md`](ARCHITECTURE.md)** describes the *previous* Knowledge OS stack (Lifecycle / Graph / Constitution). Treat it as **historical baseline and vNext candidate material**, not as the current product SoT. Do not implement against both documents as if they agreed.
+> **Source of truth for v1 product decisions (Capture · Annotate · Publish):** this document.  
+> **Obsidian vault layout & cognitive rules:** [`architecture/OBSIDIAN_CONSTITUTION_V1_1.md`](architecture/OBSIDIAN_CONSTITUTION_V1_1.md) (supersedes §7 Library folder forest below).  
+> **[`ARCHITECTURE.md`](ARCHITECTURE.md)** describes the Knowledge OS stack (Lifecycle / Graph). Treat Constitution V1 vault rules there as **historical**; do not implement Obsidian UX against both documents as if they agreed. Conflict report: [`architecture/OBSIDIAN_CONSTITUTION_CONFLICTS.md`](architecture/OBSIDIAN_CONSTITUTION_CONFLICTS.md).
 
 ---
 
@@ -66,7 +67,7 @@ v1.0 主动收缩：先做成 Matter 式的**私人阅读/收藏库 + 对外镜�
 3. **采集即入库** — 与旧 Constitution「Capture never mirrors into vault」相反：v1 的核心价值就是把正文同步进 Obsidian。
 4. **私有默认，公开显式** — 入库默认 `private`；发布到 Website 需标记精选，或开启整库镜像策略。
 5. **AI 可选、后置** — 不依赖 Lifecycle AI；书目补全/摘要可作为增强，不构成主流程。
-6. **复杂度预算** — v1 只有四条能力链：**Capture · Library · Annotate · Publish**。
+6. **复杂度预算** — v1 日常能力链：**Capture · Information · Thinking · Annotate · Publish**（Research 为合成层，不强制每条入库）。
 
 ```mermaid
 flowchart LR
@@ -86,8 +87,10 @@ flowchart LR
 | 能力 | 说明 |
 |------|------|
 | **Capture** | 网页正文+图片排版同步；邮件落成可读笔记；按书名写入纸质书核心书目信息 |
-| **Library** | 私人 Obsidian 收藏库；极简结构；每条 Library Item 一篇笔记 |
-| **Annotate** | 高亮摘录 + 自由批注（条目内或短链笔记） |
+| **Information** | 外部世界进入 vault 的可读对象；极简 `Information/`；每条一篇笔记 |
+| **Thinking** | 个人观察/反思/问题；`Thinking/`；允许碎片化 |
+| **Research** | 成熟合成 / Research Brief；`Research/`；由连接涌现，不强制 |
+| **Annotate** | 高亮摘录 + 自由批注（条目内或 Thinking 短链） |
 | **Publish** | 精选公开或整库镜像 → Website 只读呈现 |
 
 ### 明确不做（Out of scope for v1）
@@ -148,7 +151,7 @@ v1 **轻量要**：只保留自由写笔记与高亮。
 | `body_md` | 自由 Markdown |
 | `created_at` / `updated_at` | 时间 |
 
-呈现：条目内 `## Notes`，或 `Library/Notes/` 下独立笔记 + wikilink。
+呈现：条目内 `## Notes`，或 `Thinking/` 下独立笔记 + wikilink。
 
 ### 5.4 Publish Rule
 
@@ -219,36 +222,40 @@ sequenceDiagram
 
 ## 7. Obsidian 呈现规范
 
+> **Vault SoT:** [`architecture/OBSIDIAN_CONSTITUTION_V1_1.md`](architecture/OBSIDIAN_CONSTITUTION_V1_1.md).  
+> §7.1 以下布局取代旧 `Library/{Articles,Emails,Books}`。
+
 ### 7.1 文件夹（建议）
 
-极简，避免 Constitution 式多角色森林：
+极简认知角色，避免 Constitution 式多角色森林与介质子目录：
 
 ```text
-Library/
-  Articles/     # 网页与长文
-  Emails/       # 邮件/newsletter
-  Books/        # 书目卡片
-  Notes/        # 可选：独立短笔记
-90_Meta/        # 模板与约定（系统用）
+Information/    # 外部世界：网页、邮件、书目、报告等可读笔记（扁平）
+Thinking/       # 个人观察、反思、问题、碎片
+Research/       # 成熟合成 / Research Brief
+Archive/        # 冷藏遗留（非日常）
+90_Meta/        # 模板与约定（系统用，非认知节点）
 Welcome.md
 ```
 
-**v1 默认禁止自动创建：** `Concepts/`、`Projects/`、`Insights/`、`Reports/`、Lifecycle/Graph 投影笔记。
+技术例外：`Information/Attachments/{id}/` 存放媒体，不作为认知图节点。
 
-历史目录（`Archive/…`、旧 `Reflections/` 等）可保留为只读冷藏，但不作为产品主路径，也不在 Welcome 中引导日常使用。
+**禁止作为日常主路径自动创建：** `Concepts/`、`Projects/`、`Insights/`、`Reports/`、`Library/Articles|Emails|Books`、Lifecycle/Graph 投影笔记、Inbox。
+
+历史目录（`Archive/…`、旧 `Reflections/`、`Library/` 等）可保留为只读冷藏，经迁移进入三根目录。
 
 ### 7.2 单篇笔记形状
 
+**Information（可读收藏）：**
+
 ```markdown
 ---
+id: lib_…
 title: …
-type: article   # article | email | book
 source_url: …
 authors: []
 captured_at: …
-tags: []
-visibility: private   # private | public
-status: inbox         # optional
+visibility: private   # private | public（发布需要时）
 ---
 
 # Title
@@ -264,7 +271,34 @@ status: inbox         # optional
 （自由批注）
 ```
 
-书目类可增加封面、ISBN、简介等字段；正文区可以是简介 + 个人阅读笔记，而非全书。
+书目类可增加封面、ISBN、简介等字段；正文区可以是简介 + 个人阅读笔记，而非全书。  
+不要强制 `type` / `status` / 领域 tags 作为用户必填项；文件夹已表达认知角色。
+
+**Thinking（碎片允许）：**
+
+```markdown
+---
+title: …
+captured_at: …
+---
+
+# Title
+
+原始想法可以不完整。
+```
+
+**Research（成熟合成）：**
+
+```markdown
+---
+title: …
+captured_at: …
+---
+
+# Title
+
+合成正文；通过 [[wikilinks]] 连接到 Information / Thinking。
+```
 
 ### 7.3 Welcome 文案方向
 
@@ -308,36 +342,36 @@ status: inbox         # optional
 
 | 文档 | 角色 |
 |------|------|
-| **[`PRODUCT_v1.md`](PRODUCT_v1.md)（本文）** | **v1.0 产品与运作逻辑的唯一 SoT** |
-| [`ARCHITECTURE.md`](ARCHITECTURE.md) | **历史架构实录** + **vNext 候选设计库存**。其中 Lifecycle、Graph、Constitution「不落原文」、Website 为 non-goal 等结论，**不再约束 v1 产品决策** |
-| `~/.cursor/plans/*` | 更早的设计草稿；一律历史 |
+| **[`architecture/OBSIDIAN_CONSTITUTION_V1_1.md`](architecture/OBSIDIAN_CONSTITUTION_V1_1.md)** | **Obsidian-facing 权威**（文件夹、图、元数据、AI 链接规则） |
+| **[`PRODUCT_v1.md`](PRODUCT_v1.md)（本文）** | **Capture · Annotate · Publish** 产品运作；vault 布局服从 V1.1 |
+| [`ARCHITECTURE.md`](ARCHITECTURE.md) | **系统架构**（Lake / KO / Lifecycle / Graph Engine）；Constitution V1 vault 规则已 superseded |
+| [`architecture/OBSIDIAN_CONSTITUTION_CONFLICTS.md`](architecture/OBSIDIAN_CONSTITUTION_CONFLICTS.md) | 冲突裁决 |
 
-实现 v1 时：以本文的对象与工作流为准。若代码仍残留 Lifecycle/Graph API，视为遗留实现，不在产品叙事中作为主路径宣传。
+实现时：Obsidian 呈现以 V1.1 为准；采集即入库写入 `Information/`。
 
 ### 9.2 现行能力裁剪表
 
-| 现行能力 | v1 态度 |
+| 现行能力 | v1 / V1.1 态度 |
 |----------|---------|
-| connectors + collect | **保留并重定位**：目标改为「写入 Obsidian 可读笔记」 |
-| Content Lake | **降级**：可选后台备份；用户不可见 |
-| KnowledgeObject 全套 / promote-demote | **降级或重映射**为 Library Item；去掉晋升漏斗 |
-| Lifecycle / proposals / maturity | **移出 v1** → vNext 候选（见 §10） |
-| Graph Engine | **移出 v1** → vNext 候选 |
-| Concept / Project / Insight / Question 引擎 | **移出 v1** |
-| Reflections 作为 vault 主日常 | **移出主路径**；轻量笔记改走篇内 `## Notes` / `Library/Notes` |
-| Digest → `Reports/` | **移出 v1**（可选邮件摘要另议，不进 vault 主结构） |
-| `/ask` 检索问答 | **非核心**；可列增强，不作主路径 |
-| Website | **升为 v1 核心出口**（旧架构曾列为 non-goal） |
-| CLI 生命周期/图谱命令 | **非日常交互**；日常以插件保存 + Obsidian 阅读 + 发布同步为准 |
+| connectors + collect | **保留并重定位**：成功 = 写入 `Information/` 可读笔记 |
+| Content Lake | **后台字节权威**；不进认知图/文件夹 |
+| KnowledgeObject / promote-demote | **后端可保留**；vault 投影映射到 Information/Thinking/Research |
+| Lifecycle / proposals / maturity | 非日常主路径；提议须人工确认 |
+| Graph Engine | 认知图提议链接；禁止基础设施节点与自动链接爆炸 |
+| Concept / Project 文件夹 | **移除**日常主路径；想法进 Thinking，成熟合成进 Research |
+| Thinking / Reflections | **恢复为一级流**：`Thinking/`；允许碎片 |
+| Digest → `Reports/` | **不进认知主结构** → `Archive/Digests/` 或仅邮件/DB |
+| Website | **对外主表面**之一；发布源从 Library 重映射到 Information |
+| CLI 生命周期/图谱命令 | **非日常交互** |
 
-### 9.3 与旧 Constitution 的关键翻转
+### 9.3 与旧 Constitution 的关键翻转（再经 V1.1 调和）
 
-| 旧原则（ARCHITECTURE） | v1 原则（本文） |
-|------------------------|-----------------|
-| Obsidian 不是内容仓库；是 Thinking Workspace | Obsidian **就是**私人阅读/收藏库 |
-| Capture never mirrors articles into vault | **Capture 必须**把可读正文写入 vault |
-| AI proposes; humans confirm maturity / Insights | v1 无 maturity / Insight 引擎 |
-| Website UI 非主表面 | Website 是**对外主表面**之一 |
+| 旧原则（ARCHITECTURE V1） | PRODUCT v1 | Constitution V1.1 |
+|------------------------|------------|-------------------|
+| Obsidian 不是内容仓库 | Obsidian 是私人阅读库 | Obsidian = Information + Thinking + Research 认知存储 |
+| Capture never mirrors | Capture 必须写可读正文 | Capture → `Information/`（可读）；Lake 仍为字节 SoT |
+| 多角色文件夹森林 | `Library/{medium}/` | 仅三认知根目录 |
+| Reflections 移出主路径 | 篇内 Notes | **Thinking/** 一级流 |
 
 ---
 

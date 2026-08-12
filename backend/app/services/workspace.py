@@ -1,10 +1,7 @@
-"""Research Workspace (Obsidian) projection — thinking-first Constitution.
+"""Cognitive Vault (Obsidian) projection — Constitution V1.1.
 
-Only Concept / Project / Reflection / Book / Report notes are synced.
-Resources stay in the Knowledge Database.
-
-Reflections are human-owned freeform notes. Concept/Project/Book use a slim
-machine skeleton with a preserved ## Notes section for human writing.
+Vault roots: Information / Thinking / Research (+ Archive, 90_Meta).
+Legacy typed roles (concept/project/reflection/book/insight) remap to cognitive folders.
 """
 
 from __future__ import annotations
@@ -21,23 +18,58 @@ from ..schemas import ExportResult
 from ..utils import loads, workspace_config_dict
 from . import knowledge as knowledge_svc
 
+# Roles that materialize vault notes under cognitive folders
+_THINKING_ROLES = frozenset(
+    {"thinking", "reflection", "concept", "project", "question"}
+)
+_RESEARCH_ROLES = frozenset({"research", "insight"})
+_INFORMATION_ROLES = frozenset({"information", "book"})
+_DIGEST_ROLES = frozenset({"report"})
+
 
 def ensure_scaffold(vault: Path, cfg: dict | None = None) -> None:
+    """Create V1.1 cognitive roots only (plus archive/meta/attachments)."""
     cfg = cfg or workspace_config_dict()
-    folders = cfg.get("folders") or {}
-    for rel in folders.values():
-        if isinstance(rel, str) and rel:
-            (vault / rel).mkdir(parents=True, exist_ok=True)
-    (vault / "90_Meta").mkdir(parents=True, exist_ok=True)
+    only = cfg.get("scaffold_only")
+    if isinstance(only, list) and only:
+        for rel in only:
+            if isinstance(rel, str) and rel:
+                (vault / rel).mkdir(parents=True, exist_ok=True)
+        return
+    # Fallback: Information / Thinking / Research / Archive / 90_Meta
+    for rel in (
+        "Information",
+        "Thinking",
+        "Research",
+        "Archive",
+        "Archive/Digests",
+        "90_Meta",
+        "Information/Attachments",
+    ):
+        (vault / rel).mkdir(parents=True, exist_ok=True)
+
+
+def cognitive_folder_for_role(role: str, cfg: dict | None = None) -> str:
+    """Map any workspace_role to a V1.1 cognitive (or archive) folder."""
+    cfg = cfg or workspace_config_dict()
+    role = (role or "").strip().lower()
+    role_folders = cfg.get("role_folders") or {}
+    if role in role_folders:
+        return str(role_folders[role])
+    if role in _INFORMATION_ROLES:
+        return "Information"
+    if role in _RESEARCH_ROLES:
+        return "Research"
+    if role in _DIGEST_ROLES:
+        return "Archive/Digests"
+    if role == "archived":
+        return "Archive"
+    return "Thinking"
 
 
 def folder_for_role(role: str, cfg: dict | None = None) -> str:
-    cfg = cfg or workspace_config_dict()
-    role_folders = cfg.get("role_folders") or {}
-    folders = cfg.get("folders") or {}
-    if role == "report":
-        return folders.get("reports") or "Reports"
-    return role_folders.get(role) or folders.get(role + "s") or role.capitalize() + "s"
+    """Public alias used by sync — cognitive folder for role."""
+    return cognitive_folder_for_role(role, cfg)
 
 
 def thinking_cfg(cfg: dict | None = None) -> dict:
@@ -59,16 +91,15 @@ def sync_note(
     vault_path: str,
     force: bool = False,
 ) -> Path | None:
-    """Write or update one workspace note. No-op for resources.
+    """Write or update one cognitive vault note.
 
-    Reflections: create when missing; skip overwrite when file exists unless force=True
-    (API create/update uses force so body_md can land in the vault).
+    Reflections / thinking: create when missing; skip overwrite when file exists
+    unless force=True.
     """
     role = (ko.workspace_role or "resource").lower()
     if role not in knowledge_svc.WORKSPACE_NOTE_ROLES:
         return None
-    if role == "report":
-        # Reports use write_report_note with period paths
+    if role in _DIGEST_ROLES or role == "report":
         return None
 
     vault = Path(vault_path).expanduser()
@@ -86,20 +117,21 @@ def sync_note(
     if note_path.exists() and ko.vault_path:
         existing = vault / ko.vault_path
         if existing.is_file() and existing.resolve() != note_path.resolve():
-            # Title collision with a different note — disambiguate by words, not ids
-            note_path = out_dir / f"{stem} ({role}).md"
+            cognitive = _cognitive_label(role)
+            note_path = out_dir / f"{stem} ({cognitive}).md"
 
-    # Prefer known vault_path if it still exists (stable path after renames)
     if ko.vault_path:
         known = vault / ko.vault_path
         if known.is_file():
             note_path = known
 
+    preserve_roles = _THINKING_ROLES | {"reflection"}
     if (
-        role == "reflection"
+        role in preserve_roles
         and tcfg["preserve_existing_reflection_files"]
         and note_path.is_file()
         and not force
+        and role in {"reflection", "thinking"}
     ):
         ko.vault_path = str(note_path.relative_to(vault))
         db.commit()
@@ -107,7 +139,7 @@ def sync_note(
 
     human_notes = ""
     if (
-        role != "reflection"
+        role not in {"reflection", "thinking"}
         and tcfg["preserve_human_notes_on_sync"]
         and note_path.is_file()
     ):
@@ -126,7 +158,7 @@ def sync_workspace_notes(
     vault_path: str,
     notebook_id: str | None = None,
 ) -> ExportResult:
-    """Sync all promoted workspace notes (not Resources)."""
+    """Sync all cognitive vault notes (not raw Resources unless information role)."""
     vault = Path(vault_path).expanduser()
     vault.mkdir(parents=True, exist_ok=True)
     cfg = workspace_config_dict()
@@ -137,7 +169,7 @@ def sync_workspace_notes(
     written = 0
     last: Path | None = None
     for ko in kos:
-        if ko.workspace_role == "report":
+        if (ko.workspace_role or "").lower() in _DIGEST_ROLES | {"report"}:
             continue
         path = sync_note(db, ko, vault_path=str(vault))
         if path:
@@ -161,34 +193,31 @@ def render_workspace_note(
     tcfg = thinking_cfg(cfg)
     role = (ko.workspace_role or ko.kind or "resource").lower()
 
-    if role == "reflection" and tcfg["reflection_freeform"]:
-        return _render_freeform_reflection(db, ko)
+    if role in {"reflection", "thinking"} and tcfg["reflection_freeform"]:
+        return _render_freeform_thinking(db, ko, role=role)
 
     return _render_structured_note(db, ko, cfg, human_notes=human_notes)
 
 
-def _render_freeform_reflection(db: Session, ko: KnowledgeObject) -> str:
-    """Minimal frontmatter + title + body_md (no six-section skeleton)."""
+def _render_freeform_thinking(
+    db: Session, ko: KnowledgeObject, *, role: str = "thinking"
+) -> str:
+    """Minimal frontmatter + title + body (preserve fragments)."""
     ref = db.query(Reflection).filter(Reflection.id == ko.id).first()
     body = (ref.body_md if ref else "") or ""
-    # Prefer dedicated body; fall back to summary for legacy rows
     if not body.strip():
         body = (ko.summary or "").strip()
     date_str = _note_date(ko)
-    graph = "true" if ko.graph_eligible else "false"
     lines = [
         "---",
         f'title: "{_yaml_escape(ko.title)}"',
-        "type: reflection",
         f"date: {date_str}",
-        f"graph: {graph}",
         "---",
         "",
         f"# {ko.title}",
         "",
     ]
     if body.strip():
-        # Avoid duplicating the H1 if body already starts with it
         stripped = body.strip()
         h1 = f"# {ko.title}"
         if stripped.startswith(h1):
@@ -210,7 +239,7 @@ def _render_structured_note(
     *,
     human_notes: str = "",
 ) -> str:
-    """Slim template: Summary, Key Ideas, Connections, Notes, References (+ role extras)."""
+    """Slim template without taxonomy bureaucracy."""
     limits = cfg.get("limits") or {}
     max_ideas = int(limits.get("max_key_ideas") or 12)
     max_conn = int(limits.get("max_connections") or 8)
@@ -221,30 +250,29 @@ def _render_structured_note(
     connections = knowledge_svc.related_topic_names(db, ko, max_n=max_conn)
     date_str = _note_date(ko)
     summary = (ko.summary or "").strip()
-    graph = "true" if ko.graph_eligible else "false"
-    if role == "report":
-        graph = "false"
 
     lines = [
         "---",
         f'title: "{_yaml_escape(ko.title)}"',
-        f"type: {role}",
         f"date: {date_str}",
-        "status: active",
-        "tags:",
-        *([f"  - {t}" for t in tags] if tags else ["  -"]),
-        f"graph: {graph}",
-        "---",
-        "",
-        f"# {ko.title}",
-        "",
-        "## Summary",
-        "",
-        summary or "",
-        "",
-        "## Key Ideas",
-        "",
     ]
+    if tags:
+        lines.append("tags:")
+        lines.extend([f"  - {t}" for t in tags])
+    lines.extend(
+        [
+            "---",
+            "",
+            f"# {ko.title}",
+            "",
+            "## Summary",
+            "",
+            summary or "",
+            "",
+            "## Key Ideas",
+            "",
+        ]
+    )
     if key_ideas:
         for p in key_ideas[:max_ideas]:
             lines.append(f"- {p}")
@@ -257,30 +285,10 @@ def _render_structured_note(
     else:
         lines.append("")
 
-    if role == "book":
-        lines.extend(
-            [
-                "",
-                "## Reading Progress",
-                "",
-                "",
-                "## Highlights",
-                "",
-                "",
-            ]
-        )
+    if role == "book" or role == "information":
+        lines.extend(["", "## Highlights", "", ""])
     if role == "project":
-        lines.extend(
-            [
-                "",
-                "## Objectives",
-                "",
-                "",
-                "## Roadmap",
-                "",
-                "",
-            ]
-        )
+        lines.extend(["", "## Objectives", "", "", "## Roadmap", "", ""])
 
     lines.extend(["", "## Notes", ""])
     if human_notes.strip():
@@ -308,7 +316,6 @@ def extract_human_notes(markdown: str) -> str:
 
 
 def _section_body(markdown: str, heading: str) -> str:
-    """Return text under ## {heading} until the next ## heading or EOF."""
     pattern = re.compile(
         rf"^## {re.escape(heading)}\s*\n(.*?)(?=^## |\Z)",
         re.MULTILINE | re.DOTALL,
@@ -327,7 +334,7 @@ def write_report_note(
     period_end: datetime | None = None,
     subject: str = "",
 ) -> str:
-    """Write a digest report. graph: false — reports do not pollute the idea graph."""
+    """Write a digest under Archive/Digests (not a cognitive graph node)."""
     vault = Path(vault_path).expanduser()
     cfg = workspace_config_dict()
     if cfg.get("scaffold_folders", True):
@@ -337,10 +344,10 @@ def write_report_note(
     period = (period or "daily").lower()
     end = period_end or datetime.now(timezone.utc)
     if period == "weekly":
-        rel_folder = folders.get("reports_weekly") or "Reports/Weekly"
+        rel_folder = folders.get("reports_weekly") or "Archive/Digests/Weekly"
         stem = _iso_week_stem(end)
     else:
-        rel_folder = folders.get("reports_daily") or "Reports/Daily"
+        rel_folder = folders.get("reports_daily") or "Archive/Digests/Daily"
         stem = end.astimezone(timezone.utc).strftime("%Y-%m-%d")
 
     out_dir = vault / rel_folder
@@ -352,13 +359,8 @@ def write_report_note(
     front = [
         "---",
         f'title: "{_yaml_escape(subject or stem)}"',
-        "type: report",
         f"period: {period}",
         f"date: {date_s}",
-        "status: active",
-        "tags:",
-        "  - review",
-        "graph: false",
         "---",
         "",
     ]
@@ -385,8 +387,16 @@ def archive_note(vault_path: str, relative_path: str) -> str | None:
     return str(dest.relative_to(vault))
 
 
+def _cognitive_label(role: str) -> str:
+    role = (role or "").lower()
+    if role in _INFORMATION_ROLES:
+        return "information"
+    if role in _RESEARCH_ROLES:
+        return "research"
+    return "thinking"
+
+
 def _natural_stem(title: str) -> str:
-    """Human-readable filename: spaces kept as spaces where safe; strip junk."""
     cleaned = (title or "Untitled").strip()
     cleaned = cleaned.replace("/", "-").replace("\\", "-")
     for ch in ':*?"<>|':
@@ -394,7 +404,6 @@ def _natural_stem(title: str) -> str:
     cleaned = " ".join(cleaned.split())
     if not cleaned:
         cleaned = "Untitled"
-    # Obsidian-friendly length
     return cleaned[:120]
 
 

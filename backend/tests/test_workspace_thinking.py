@@ -1,4 +1,4 @@
-"""Thinking-first vault: freeform reflections + human Notes preservation."""
+"""Thinking vault: freeform notes under Thinking/ + human Notes preservation."""
 
 from __future__ import annotations
 
@@ -30,14 +30,13 @@ def test_reflection_render_is_freeform(db_session, vault_path):
         vault_path=str(vault_path),
         sync=True,
     )
-    text = (vault_path / "Reflections" / "Morning notes.md").read_text(encoding="utf-8")
-    assert "type: reflection" in text
+    text = (vault_path / "Thinking" / "Morning notes.md").read_text(encoding="utf-8")
+    assert "type: reflection" not in text  # minimal frontmatter
     assert "## Summary" not in text
     assert "## Key Ideas" not in text
     assert "## My Reflection" not in text
     assert "Connectivity feels over-indexed." in text
     assert "Next: re-read MMN paper." in text
-    # Re-render from DB matches body_md
     rendered = workspace_svc.render_workspace_note(db_session, ko)
     assert "## Summary" not in rendered
     assert "Connectivity feels over-indexed." in rendered
@@ -53,13 +52,12 @@ def test_sync_preserves_existing_reflection_file(db_session, vault_path):
         vault_path=str(vault_path),
         sync=True,
     )
-    path = vault_path / "Reflections" / "Keep my words.md"
+    path = vault_path / "Thinking" / "Keep my words.md"
     path.write_text(
-        "---\ntitle: \"Keep my words\"\ntype: reflection\ndate: 2026-08-02\ngraph: true\n---\n\n"
+        "---\ntitle: \"Keep my words\"\ndate: 2026-08-02\n---\n\n"
         "# Keep my words\n\nI wrote this in Obsidian and it must survive sync.\n",
         encoding="utf-8",
     )
-    # Bulk sync must not wipe human vault content
     workspace_svc.sync_note(db_session, ko, vault_path=str(vault_path), force=False)
     text = path.read_text(encoding="utf-8")
     assert "I wrote this in Obsidian and it must survive sync." in text
@@ -87,11 +85,10 @@ def test_concept_sync_preserves_notes_and_refreshes_summary(db_session, vault_pa
     db_session.add(ko)
     db_session.commit()
 
-    path = vault_path / "Concepts" / "Migraine.md"
+    path = vault_path / "Thinking" / "Migraine.md"
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(
-        "---\ntitle: \"Migraine\"\ntype: concept\ndate: 2026-08-02\nstatus: active\n"
-        "tags:\n  -\ngraph: true\n---\n\n# Migraine\n\n"
+        "---\ntitle: \"Migraine\"\ndate: 2026-08-02\n---\n\n# Migraine\n\n"
         "## Summary\n\nold summary\n\n"
         "## Key Ideas\n\n- point a\n\n"
         "## Connections\n\n\n"
@@ -99,7 +96,7 @@ def test_concept_sync_preserves_notes_and_refreshes_summary(db_session, vault_pa
         "## References\n\n\n",
         encoding="utf-8",
     )
-    ko.vault_path = "Concepts/Migraine.md"
+    ko.vault_path = "Thinking/Migraine.md"
     ko.summary = "new machine summary"
     ko.key_points_json = '["point a", "point b"]'
     db_session.commit()
