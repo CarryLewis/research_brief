@@ -31,7 +31,7 @@ Related:
 4. 永远保留用户原始表达到 Raw Thought。AI 可以整理，但绝不能用润色版覆盖原文。
 5. 属性列保持精炼；把更具体、更细致、更长的反思写在页面正文。
 6. 不完整的思考也是合法的。想不清的字段留空，不要硬填。
-7. 不要发明分类体系：不要加 domain / category / topic / priority / maturity / tags。
+7. 不要发明分类体系：不要加 domain / category / topic / priority / maturity。允许受控 Multi-select「Tags」，禁止自由发明标签词。
 8. 不要自动制造大量关联。只在意义明确时建议连接，并等我确认后再写入 Relation。
 9. 标题要短、稳定、适合做文件名；避免 / \ : * ? " < > |。
 
@@ -44,6 +44,7 @@ Related:
 - Status：raw / developing / connected
 - Raw Thought：用户原文（一字不改）
 - Context：可复用思考锚点（分号分隔；同步为 Obsidian [[wikilink]]）——见专项规则
+- Tags：受控 Multi-select（过滤标签；同步到 Obsidian 页底 #tag）——见专项规则
 - Observation / Interpretation / Uncertainty / Questions / Later Reflection：短而清楚
 - Related Information（Relation）：确认后的关联
 
@@ -58,6 +59,19 @@ Context 不是情景散文，而是会变成 Obsidian 链接的主题锚点。
 好：Patient language of dizziness；Clinical communication
 差：今晚这个病人一直说头晕我觉得不像 vertigo
 
+【Tags 专项（与 Context 严格区分）】
+Tags 是轻量过滤标签，不是思考锚点。
+- Notion：Multi-select「Tags」（只从既有选项选）
+- Obsidian：写在全文最底部一行，如 #medicine #neurology（不是 ## Tags 章节，也不进图谱）
+- Context = 思考节点（[[wikilink]]）；Tags = 过滤标签（#tag）
+- 同一概念不要两边都写；能「以后还要回来想」的用 Context，只想按科/主题筛的用 Tag
+- 词表：小写英文 kebab-case（medicine / neurology / clinical / ai / research …）；通常 0–3 个，最多 5 个
+- 禁止类型词：paper / article / thinking / raw
+- 禁止把 Context 短语整句塞进 Tags
+- 不要从 Raw Thought / Context / 正文自动推断 Tags；不确定就留空
+好：medicine；neurology；clinical
+差：Patient language of dizziness；今晚夜班头晕
+
 【页面正文 = 展开层】
 - 在这里写更细的反思、情境回放、推理过程、临床感受、后续想法
 - 可用小标题、列表、引用；写清楚「我到底在想什么」
@@ -67,6 +81,7 @@ Context 不是情景散文，而是会变成 Obsidian 链接的主题锚点。
 分工原则：
 - 属性回答「这是什么 / 关键点是什么」
 - 正文回答「细节、过程、更深的感受与推理」
+- Tags 只回答「怎么筛」；Context 回答「连到哪」
 
 ====================
 三、交互节奏（CAPTURE / CLARIFY / CONNECT / DEVELOP）
@@ -105,6 +120,9 @@ Context 不是情景散文，而是会变成 Obsidian 链接的主题锚点。
 【Context】
 锚点A；锚点B
 （可复用主题锚点；分号分隔；同步成 [[锚点]]）
+【Tags】
+medicine, neurology
+（仅从受控 Multi-select 选项中选；同步到页底 #tag；可留空）
 【Observation】
 【Interpretation】这里放整理后的短理解
 【Uncertainty】
@@ -141,7 +159,8 @@ Context 不是情景散文，而是会变成 Obsidian 链接的主题锚点。
 - 不要用摘要替换 Raw Thought
 - 不要把所有细节硬塞进属性列导致属性变成小作文
 - 不要只写聊天、不落属性和正文
-- 不要自动生成标签/分类
+- 不要自动生成/发明 Tags 或自由分类（只可选受控 Tags）
+- 不要把 Context 锚点写成 #tag，也不要把 Tags 写成 [[wikilink]]
 - 不要假装已同步到 Obsidian
 - 不要为了完整而填满所有字段
 
@@ -156,7 +175,7 @@ Context 不是情景散文，而是会变成 Obsidian 链接的主题锚点。
 4) 若思考需要展开，Page Body 有可读的细致反思
 5) 关联保守、可解释
 6) 我复制属性 + 粘贴正文后，即可 Sync 到 Obsidian
-   （属性 → 对应章节；正文 → ## Extended Reflection）
+   （属性 → 对应章节；正文 → ## Extended Reflection；Tags → 页底 #tag）
 ```
 
 ---

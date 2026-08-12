@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from typing import Any
 
+from ..knowledge import normalize_filter_tags
 from .model import ThinkingConnection, ThinkingObject
 
 
@@ -18,6 +19,7 @@ DEFAULT_PROPERTY_NAMES: dict[str, str] = {
     "questions": "Questions",
     "later_reflection": "Later Reflection",
     "related_information": "Related Information",
+    "tags": "Tags",
 }
 
 
@@ -83,6 +85,21 @@ def extract_select_prop(properties: dict[str, Any], name: str) -> str:
     return ""
 
 
+def extract_multi_select_prop(properties: dict[str, Any], name: str) -> list[str]:
+    """Return option names from a Notion multi_select property."""
+    prop = properties.get(name)
+    if not isinstance(prop, dict) or prop.get("type") != "multi_select":
+        return []
+    items = prop.get("multi_select") or []
+    if not isinstance(items, list):
+        return []
+    out: list[str] = []
+    for item in items:
+        if isinstance(item, dict) and item.get("name"):
+            out.append(str(item["name"]))
+    return out
+
+
 def extract_relation_ids(properties: dict[str, Any], name: str) -> list[str]:
     prop = properties.get(name)
     if not isinstance(prop, dict) or prop.get("type") != "relation":
@@ -126,6 +143,8 @@ def normalize_page(
             continue
         connections.append(ThinkingConnection(title=rel_title, source_id=rel_id))
 
+    tags = normalize_filter_tags(extract_multi_select_prop(props, names["tags"]))
+
     return ThinkingObject(
         title=title,
         source="notion",
@@ -141,6 +160,7 @@ def normalize_page(
         later_reflection=extract_rich_text_prop(props, names["later_reflection"]),
         page_body=(page_body or "").strip(),
         connections=connections,
+        tags=tags,
         status=extract_select_prop(props, names["status"]),
     )
 

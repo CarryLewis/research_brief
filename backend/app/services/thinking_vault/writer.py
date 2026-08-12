@@ -130,6 +130,11 @@ def render_markdown(obj: ThinkingObject) -> str:
             seen.add(title)
             lines.append(f"[[{title}]]")
 
+    # Controlled filter tags → Obsidian #tags at page bottom (not a ## section).
+    footer_tags = [t.strip() for t in (obj.tags or []) if str(t or "").strip()]
+    if footer_tags:
+        lines.extend(["", " ".join(f"#{t}" for t in footer_tags)])
+
     lines.append("")
     return "\n".join(lines)
 

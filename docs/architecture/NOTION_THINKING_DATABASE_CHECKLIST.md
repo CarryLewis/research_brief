@@ -33,6 +33,7 @@ Use these **display names** unless you override `thinking_vault.property_names` 
 | Uncertainty | Rich text | Optional |
 | Questions | Rich text | Optional; bullet lines OK |
 | Later Reflection | Rich text | Optional |
+| Tags | Multi-select | Controlled filter vocabulary (`medicine`, `neurology`, …). Syncs to Obsidian page footer as `#tag`. Not Context. |
 | Related Information | Relation | Link to other Thinking pages and/or Information pages |
 
 ---
@@ -41,7 +42,10 @@ Use these **display names** unless you override `thinking_vault.property_names` 
 
 - Domain / category / subcategory / topic / subtopic
 - Priority / maturity / knowledge type / workspace / project / concept taxonomies
-- Dozens of tags as sync-critical columns
+- Free-form / dozens of ad-hoc tags outside the allowlist
+
+Allowed: one controlled **Tags** multi-select (filter labels only).  
+Context stays text anchors → `[[wikilink]]`; Tags stay multi-select → footer `#tag`.
 
 The database is an **index of thinking slots**, not an ontology.
 
@@ -59,6 +63,8 @@ Thinking/{Name}.md
 
 - Empty properties → section omitted
 - `Related Information` → `## Connections` with `[[Target Name]]`
+- `Tags` → page-bottom `#medicine #neurology` (omitted when empty; no `## Tags` section)
+- `Context` → `## Context` with `[[anchors]]` (never as `#tag`)
 - Identity = Notion page id (`source_id` in frontmatter), not filename
 
 ---

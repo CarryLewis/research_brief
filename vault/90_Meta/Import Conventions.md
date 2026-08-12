@@ -70,3 +70,13 @@ Write anything.
 
 Small filter vocabulary only (`medicine`, `neurology`, `research`, …).  
 Do not use type tags like `paper` / `article` in frontmatter.
+
+### Thinking Vault: Tags vs Context
+
+| | **Context** | **Tags** |
+|---|---|---|
+| Notion | Text (`;` / `；`) | Multi-select `Tags` |
+| Obsidian | `## Context` → `[[wikilink]]` | Page **footer** → `#tag` |
+| Role | Thinking anchors (enter the graph) | Filter labels (search only) |
+
+Rules: do not put Context phrases into Tags; do not invent free-form tags; AI must not infer Tags from Raw Thought / Context. Empty Tags omit the footer line (no `## Tags` section).

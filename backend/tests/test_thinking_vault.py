@@ -31,6 +31,8 @@ def _page(
     *,
     raw: str = "",
     interpretation: str = "",
+    context: str = "",
+    tags: list[str] | None = None,
     relations: list[str] | None = None,
     edited: str = "2026-08-12T10:00:00.000Z",
     created: str = "2026-08-12T09:00:00.000Z",
@@ -44,7 +46,11 @@ def _page(
             "select": {"name": status} if status else None,
         },
         "Raw Thought": {"id": "raw", "type": "rich_text", "rich_text": _rich(raw)},
-        "Context": {"id": "ctx", "type": "rich_text", "rich_text": []},
+        "Context": {
+            "id": "ctx",
+            "type": "rich_text",
+            "rich_text": _rich(context) if context else [],
+        },
         "Observation": {"id": "obs", "type": "rich_text", "rich_text": []},
         "Interpretation": {
             "id": "interp",
@@ -54,6 +60,11 @@ def _page(
         "Uncertainty": {"id": "unc", "type": "rich_text", "rich_text": []},
         "Questions": {"id": "q", "type": "rich_text", "rich_text": []},
         "Later Reflection": {"id": "later", "type": "rich_text", "rich_text": []},
+        "Tags": {
+            "id": "tags",
+            "type": "multi_select",
+            "multi_select": [{"name": t} for t in (tags or [])],
+        },
         "Related Information": {
             "id": "rel",
             "type": "relation",
@@ -152,6 +163,59 @@ def test_render_markdown_omits_empty_sections_and_keeps_raw():
     assert md.index("## Extended Reflection") < md.index("## Connections")
     assert "[[Clinical communication]]" in md
     assert "## Connections" in md
+    # Empty tags → no footer hash-tags, and Context stays wikilinks only
+    assert "#medicine" not in md
+    assert "## Tags" not in md
+
+
+def test_normalize_and_render_tags_at_page_bottom():
+    page = _page(
+        "11111111-1111-1111-1111-111111111111",
+        "Dizziness is not Vertigo",
+        raw="今天夜班……",
+        context="Clinical communication；Patient language of dizziness",
+        tags=["Medicine", "neurology", "paper", "clinical", "todo", "review", "extra"],
+        relations=["22222222-2222-2222-2222-222222222222"],
+    )
+    obj = normalize_page(
+        page,
+        relation_titles={
+            "22222222-2222-2222-2222-222222222222": "Clinical communication",
+        },
+    )
+    assert obj.tags == ["medicine", "neurology", "clinical", "todo", "review"]
+    assert "paper" not in obj.tags  # type tags rejected
+    assert "tags:medicine,neurology,clinical,todo,review" in obj.content_fingerprint()
+
+    md = render_markdown(obj)
+    assert "## Context" in md
+    assert "[[Clinical communication]]; [[Patient language of dizziness]]" in md
+    assert "#Clinical communication" not in md  # Context ≠ hashtag
+    assert "## Tags" not in md
+    assert md.rstrip().endswith("#medicine #neurology #clinical #todo #review")
+    assert md.index("## Connections") < md.index("#medicine #neurology")
+
+
+def test_empty_tags_omit_footer_and_hash_changes_with_tags():
+    bare = ThinkingObject(
+        title="t",
+        source_id="1",
+        raw_thought="x",
+        context="Night shift clinical reasoning",
+    )
+    tagged = ThinkingObject(
+        title="t",
+        source_id="1",
+        raw_thought="x",
+        context="Night shift clinical reasoning",
+        tags=["neurology"],
+    )
+    bare_md = render_markdown(bare)
+    tagged_md = render_markdown(tagged)
+    assert "#neurology" not in bare_md
+    assert bare_md.rstrip().endswith("[[Night shift clinical reasoning]]")
+    assert tagged_md.rstrip().endswith("#neurology")
+    assert bare.content_fingerprint() != tagged.content_fingerprint()
 
 
 def test_blocks_to_markdown_basic():

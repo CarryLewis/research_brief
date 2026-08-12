@@ -66,6 +66,7 @@ class ThinkingObject:
     later_reflection: str = ""
     page_body: str = ""
     connections: list[ThinkingConnection] = field(default_factory=list)
+    tags: list[str] = field(default_factory=list)
     status: str = ""
 
     def __post_init__(self) -> None:
@@ -93,6 +94,15 @@ class ThinkingObject:
                 if item.title:
                     cleaned.append(item)
         self.connections = cleaned
+        tag_seen: set[str] = set()
+        cleaned_tags: list[str] = []
+        for raw in self.tags or []:
+            tag = str(raw or "").strip()
+            if not tag or tag in tag_seen:
+                continue
+            tag_seen.add(tag)
+            cleaned_tags.append(tag)
+        self.tags = cleaned_tags
 
     def content_fingerprint(self) -> str:
         """Stable hash input for idempotent sync."""
@@ -113,6 +123,8 @@ class ThinkingObject:
         ]
         for conn in self.connections:
             parts.append(f"{conn.source_id}:{conn.title}")
+        if self.tags:
+            parts.append("tags:" + ",".join(self.tags))
         return "\n".join(parts)
 
     def to_dict(self) -> dict[str, Any]:
