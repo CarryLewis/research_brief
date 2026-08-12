@@ -1,11 +1,14 @@
 # Research Brief v1.0 — 产品与运作逻辑
 
-**Status:** Canonical product SoT for v1.0  
+**Status:** Canonical product SoT for **Library / Information reading capture** (v1.0)  
 **Date:** 2026-08  
-**Scope:** Product positioning, workflows, interaction, presentation. Not an implementation plan.
+**Scope:** Product positioning, workflows, interaction, presentation for Save → Library → Publish. Not an implementation plan for Thinking Vault.
 
-> **Source of truth for v1 product decisions:** this document.  
-> **[`ARCHITECTURE.md`](ARCHITECTURE.md)** describes the *previous* Knowledge OS stack (Lifecycle / Graph / Constitution). Treat it as **historical baseline and vNext candidate material**, not as the current product SoT. Do not implement against both documents as if they agreed.
+> **Split SoT (2026-08):**  
+> - **This document** remains SoT for the Matter-style **Library reading** path (`Library/`, extension save, website mirror of reading notes).  
+> - **Thinking Vault** is now product-priority for personal thinking: see [`architecture/THINKING_VAULT_ARCHITECTURE.md`](architecture/THINKING_VAULT_ARCHITECTURE.md) and [`architecture/THINKING_VAULT_MIGRATION.md`](architecture/THINKING_VAULT_MIGRATION.md).  
+> - Where this document says Obsidian is *only* a reading library, or Welcome must not guide thinking, **Thinking Vault wins**. Do not implement Thinking features against Library-only assumptions.  
+> - [`ARCHITECTURE.md`](ARCHITECTURE.md) remains the Knowledge OS inventory (Lake / KO / Lifecycle / Graph), subordinate to Thinking Vault on thinking sync and vault cognitive roots.
 
 ---
 
