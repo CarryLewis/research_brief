@@ -1,11 +1,14 @@
 # Research Brief v1.0 — 产品与运作逻辑
 
-**Status:** Canonical product SoT for v1.0  
+**Status:** Canonical product SoT for v1.0 **Library / reading-capture path**  
 **Date:** 2026-08  
 **Scope:** Product positioning, workflows, interaction, presentation. Not an implementation plan.
 
-> **Source of truth for v1 product decisions:** this document.  
-> **[`ARCHITECTURE.md`](ARCHITECTURE.md)** describes the *previous* Knowledge OS stack (Lifecycle / Graph / Constitution). Treat it as **historical baseline and vNext candidate material**, not as the current product SoT. Do not implement against both documents as if they agreed.
+> **SoT split (2026-08):** This document remains authoritative for **Information** — Capture · Library · Annotate · Publish.  
+> For **Thinking** (Notion → Obsidian, `Thinking/` vault root, sync contract), follow  
+> [`architecture/THINKING_VAULT_ARCHITECTURE.md`](architecture/THINKING_VAULT_ARCHITECTURE.md).  
+> Where the two conflict on Notion, vault IA, or thinking authority, **Thinking Vault wins**.  
+> [`ARCHITECTURE.md`](ARCHITECTURE.md) remains historical Knowledge OS inventory / vNext material.
 
 ---
 

@@ -9,7 +9,12 @@ folders:
   insights: Insights
   collections: Collections
   archive: Archive
+  archive_thinking: Archive/Thinking
   legacy: Archive/Legacy
+  # Thinking Vault V1 cognitive roots (Notion sync → thinking)
+  thinking: Thinking
+  information: Information
+  research: Research
   reports: Reports
   reports_daily: Reports/Daily
   reports_weekly: Reports/Weekly
@@ -24,6 +29,7 @@ role_folders:
   insight: Insights
   book: Books
   report: Reports
+  thinking: Thinking
 
 suggestion_threshold: 5
 
