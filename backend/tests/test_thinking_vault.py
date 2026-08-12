@@ -14,6 +14,7 @@ from app.services.thinking_vault.normalizer import normalize_page, rich_text_to_
 from app.services.thinking_vault.notion_client import NotionClient
 from app.services.thinking_vault.sync import apply_thinking_objects
 from app.services.thinking_vault.writer import (
+    format_context_wikilinks,
     natural_stem,
     render_markdown,
     write_thinking_note,
@@ -116,6 +117,17 @@ def test_normalize_page_property_mapping_and_links():
     assert obj.status == "developing"
 
 
+def test_format_context_wikilinks():
+    assert (
+        format_context_wikilinks("Clinical communication；Vestibular language")
+        == "[[Clinical communication]]; [[Vestibular language]]"
+    )
+    assert format_context_wikilinks("[[Already Linked]]; New Topic") == (
+        "[[Already Linked]]; [[New Topic]]"
+    )
+    assert format_context_wikilinks("") == ""
+
+
 def test_render_markdown_omits_empty_sections_and_keeps_raw():
     obj = ThinkingObject(
         title="Dizziness is not Vertigo",
@@ -123,6 +135,7 @@ def test_render_markdown_omits_empty_sections_and_keeps_raw():
         created_at="2026-08-12T09:00:00.000Z",
         updated_at="2026-08-12T10:00:00.000Z",
         raw_thought="今天夜班……",
+        context="Clinical communication；Patient language of dizziness",
         interpretation="Not vertigo.",
         page_body="更细致的反思：患者用词与我的临床分类可能错位。",
         connections=[ThinkingConnection(title="Clinical communication")],
@@ -131,8 +144,9 @@ def test_render_markdown_omits_empty_sections_and_keeps_raw():
     assert 'source_id: "abc123"' in md
     assert "## Raw Thought" in md
     assert "今天夜班……" in md
+    assert "## Context" in md
+    assert "[[Clinical communication]]; [[Patient language of dizziness]]" in md
     assert "## Interpretation" in md
-    assert "## Context" not in md
     assert "## Extended Reflection" in md
     assert "更细致的反思" in md
     assert md.index("## Extended Reflection") < md.index("## Connections")

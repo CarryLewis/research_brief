@@ -62,6 +62,37 @@ def _yaml_escape(value: str) -> str:
     return value.replace("\\", "\\\\").replace('"', '\\"')
 
 
+def format_context_wikilinks(context: str) -> str:
+    """Turn Context property into semicolon-joined Obsidian Wikilinks.
+
+    Input terms are split on ``;`` (full-width ``；`` also accepted).
+    Existing ``[[...]]`` wrappers are preserved.
+    """
+    raw = (context or "").strip()
+    if not raw:
+        return ""
+    # Prefer Chinese semicolon, also allow ASCII
+    normalized = raw.replace("；", ";")
+    parts: list[str] = []
+    seen: set[str] = set()
+    for chunk in normalized.split(";"):
+        term = chunk.strip()
+        if not term:
+            continue
+        if term.startswith("[[") and term.endswith("]]"):
+            inner = term[2:-2].strip()
+        else:
+            inner = term.strip("[]").strip()
+        if not inner:
+            continue
+        key = inner.casefold()
+        if key in seen:
+            continue
+        seen.add(key)
+        parts.append(f"[[{inner}]]")
+    return "; ".join(parts)
+
+
 def render_markdown(obj: ThinkingObject) -> str:
     """Render minimal frontmatter + non-empty sections + page body + Connections."""
     lines = [
@@ -79,6 +110,10 @@ def render_markdown(obj: ThinkingObject) -> str:
         if not body:
             continue
         heading = SECTION_HEADINGS[field_name]
+        if field_name == "context":
+            body = format_context_wikilinks(body)
+            if not body:
+                continue
         lines.extend(["", f"## {heading}", "", body])
 
     page_body = (obj.page_body or "").strip()

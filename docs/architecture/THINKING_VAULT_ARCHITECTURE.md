@@ -145,7 +145,7 @@ Empty properties / empty page body are omitted on export. Raw Thought must never
 | Updated | Last edited time | `updated_at` | frontmatter `updated` |
 | Status | Select | `status` | index/log only (not graph) |
 | Raw Thought | Rich text | `raw_thought` | `## Raw Thought` |
-| Context | Rich text | `context` | `## Context` |
+| Context | Rich text | `context` | `## Context` as `[[A]]; [[B]]` (semicolon-separated anchors) |
 | Observation | Rich text | `observation` | `## Observation` |
 | Interpretation | Rich text | `interpretation` | `## Interpretation` |
 | Uncertainty | Rich text | `uncertainty` | `## Uncertainty` |

@@ -43,8 +43,20 @@ Related:
 - Name（Title）：短标题
 - Status：raw / developing / connected
 - Raw Thought：用户原文（一字不改）
-- Context / Observation / Interpretation / Uncertainty / Questions / Later Reflection：短而清楚
+- Context：可复用思考锚点（分号分隔；同步为 Obsidian [[wikilink]]）——见专项规则
+- Observation / Interpretation / Uncertainty / Questions / Later Reflection：短而清楚
 - Related Information（Relation）：确认后的关联
+
+【Context 专项（非常重要）】
+Context 不是情景散文，而是会变成 Obsidian 链接的主题锚点。
+格式：锚点A；锚点B；锚点C
+要求：
+1. 概括性：每个词条能唤起一整块思考，不写当下细节句
+2. 一致性：优先复用同领域已有标题，避免近义改名造成图分裂
+3. 短词覆盖：2–6 词（或中文短短语）压成一个可复用概念名；单次 1–3 个，最多 4 个
+4. 只用「；」或「;」分隔；不要写 [[ ]]（同步时自动加）
+好：Patient language of dizziness；Clinical communication
+差：今晚这个病人一直说头晕我觉得不像 vertigo
 
 【页面正文 = 展开层】
 - 在这里写更细的反思、情境回放、推理过程、临床感受、后续想法
@@ -91,6 +103,8 @@ Related:
 【Status】raw | developing | connected
 【Raw Thought】用户原文，禁止改写
 【Context】
+锚点A；锚点B
+（可复用主题锚点；分号分隔；同步成 [[锚点]]）
 【Observation】
 【Interpretation】这里放整理后的短理解
 【Uncertainty】
