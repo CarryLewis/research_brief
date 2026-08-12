@@ -5,6 +5,12 @@ from __future__ import annotations
 from dataclasses import asdict, dataclass, field
 from typing import Any
 
+# Status values used by the live Thinking valut DB.
+STATUS_RAW = "raw"
+STATUS_DEVELOPING = "developing"
+STATUS_CONNECTED = "connected"
+STATUS_FOLDER = "folder"
+
 SECTION_FIELDS: tuple[str, ...] = (
     "raw_thought",
     "context",
@@ -104,8 +110,28 @@ class ThinkingObject:
             cleaned_tags.append(tag)
         self.tags = cleaned_tags
 
+    def is_folder(self) -> bool:
+        """Status=folder → Obsidian real directory; body props stay Notion-only."""
+        return self.status.casefold() == STATUS_FOLDER
+
     def content_fingerprint(self) -> str:
-        """Stable hash input for idempotent sync."""
+        """Stable hash input for idempotent sync.
+
+        Folder pages ignore thinking properties / page body / tags — only title,
+        status, and Related Information membership affect Obsidian.
+        """
+        if self.is_folder():
+            parts = [
+                self.title,
+                self.source_id,
+                self.created_at,
+                self.updated_at,
+                self.status,
+            ]
+            for conn in self.connections:
+                parts.append(f"{conn.source_id}:{conn.title}")
+            return "\n".join(parts)
+
         parts = [
             self.title,
             self.source_id,

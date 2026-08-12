@@ -26,10 +26,11 @@ Property **display names** must match exactly (English), unless you later change
 2. Created — Created time
 3. Updated — Last edited time
 4. Status — Select
-   选项仅这三个（不要更多）：
+   选项仅这四个（不要更多）：
    - raw
    - developing
    - connected
+   - folder  （Obsidian 真实目录；Related = 成员；其它属性/正文仅 Notion AI 用）
 5. Raw Thought — Text / Rich text
    说明：保存用户原始表达；AI 永远不要用润色后的摘要覆盖它
 6. Context — Text / Rich text
@@ -54,7 +55,7 @@ Property **display names** must match exactly (English), unless you later change
 - Priority / Maturity / Knowledge type
 - Workspace / Project / Concept
 - 大量自由 Tags / 未受控标签体系
-- 任何复杂工作流状态机（除了上面的 Status 三选项）
+- 任何复杂工作流状态机（除了上面的 Status 四选项）
 
 允许：一个受控 Multi-select「Tags」（过滤用）。不要发明 Domain/Topic 分类树。
 
@@ -62,7 +63,7 @@ Property **display names** must match exactly (English), unless you later change
 请至少提供一个默认 Table 视图，列顺序建议：
 Name | Status | Raw Thought | Context | Tags | Observation | Interpretation | Uncertainty | Questions | Later Reflection | Related Information | Created | Updated
 
-可再加一个 Board 视图，按 Status 分组（raw / developing / connected）。
+可再加一个 Board 视图，按 Status 分组（raw / developing / connected / folder）。
 
 # 一条示例条目（用于验收字段）
 请创建 1 条示例 page：

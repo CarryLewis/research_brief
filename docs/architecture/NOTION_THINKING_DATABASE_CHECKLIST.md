@@ -25,7 +25,7 @@ Use these **display names** unless you override `thinking_vault.property_names` 
 | Name | Title | Default title property (rename to `Name` if needed) |
 | Created | Created time | Built-in or Created time property |
 | Updated | Last edited time | Built-in last edited time |
-| Status | Select | Keep options few (e.g. `raw`, `developing`, `connected`) |
+| Status | Select | Options: `raw`, `developing`, `connected`, `folder` |
 | Raw Thought | Rich text | Original expression — never overwritten by AI polish |
 | Context | Rich text | Optional |
 | Observation | Rich text | Optional |
@@ -62,10 +62,11 @@ Thinking/{Name}.md
 ```
 
 - Empty properties → section omitted
-- `Related Information` → `## Connections` with `[[Target Name]]`
-- `Tags` → page-bottom `#medicine #neurology` (omitted when empty; no `## Tags` section)
+- `Related Information` → `## Connections` with `[[Target Name]]` (ordinary notes)
+- `Status=folder` → create `Thinking/{Name}/`; move Related members into that directory; **no** `.md` index note; folder props/body stay Notion-only
+- `Tags` → page-bottom `#medicine #neurology` (omitted when empty; no `## Tags` section; skipped for folders)
 - `Context` → `## Context` with `[[anchors]]` (never as `#tag`)
-- Identity = Notion page id (`source_id` in frontmatter), not filename
+- Identity = Notion page id (`source_id` in frontmatter or folder sidecar), not filename
 
 ---
 

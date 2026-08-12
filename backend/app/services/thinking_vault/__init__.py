@@ -2,13 +2,18 @@
 
 from .adapter import NotionThinkingAdapter
 from .blocks import blocks_to_markdown
-from .model import ThinkingConnection, ThinkingObject
+from .model import STATUS_FOLDER, ThinkingConnection, ThinkingObject
 from .normalizer import normalize_page
 from .notion_client import NotionAPIError, NotionClient
 from .sync import SyncResult, apply_thinking_objects, last_sync_status, sync_from_notion
-from .writer import render_markdown, write_thinking_note
+from .writer import (
+    render_markdown,
+    write_thinking_folder,
+    write_thinking_note,
+)
 
 __all__ = [
+    "STATUS_FOLDER",
     "NotionAPIError",
     "NotionClient",
     "NotionThinkingAdapter",
@@ -21,5 +26,6 @@ __all__ = [
     "normalize_page",
     "render_markdown",
     "sync_from_notion",
+    "write_thinking_folder",
     "write_thinking_note",
 ]

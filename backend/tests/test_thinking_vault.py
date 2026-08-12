@@ -348,6 +348,140 @@ def test_sync_idempotent_and_archive(db_session, vault_path: Path):
     assert archived
 
 
+def test_folder_status_fingerprint_ignores_body_props():
+    folder = ThinkingObject(
+        title="Clinical themes",
+        source_id="folder-1",
+        status="folder",
+        raw_thought="AI writing style notes — Notion only",
+        interpretation="should not affect hash",
+        page_body="long guidance",
+        tags=["medicine"],
+        connections=[ThinkingConnection(title="Alpha", source_id="id-a")],
+    )
+    assert folder.is_folder()
+    fp1 = folder.content_fingerprint()
+    folder.raw_thought = "changed"
+    folder.page_body = "also changed"
+    folder.tags = ["neurology"]
+    assert folder.content_fingerprint() == fp1
+    folder.connections = [
+        ThinkingConnection(title="Alpha", source_id="id-a"),
+        ThinkingConnection(title="Beta", source_id="id-b"),
+    ]
+    assert folder.content_fingerprint() != fp1
+
+
+def test_folder_create_move_rename_multi_owner_and_archive(db_session, vault_path: Path):
+    from app.services.thinking_vault.writer import FOLDER_SIDECAR
+
+    folder = ThinkingObject(
+        title="Vertigo cluster",
+        source_id="folder-1",
+        status="folder",
+        raw_thought="Notion-only style guide",
+        updated_at="2026-08-12T10:00:00.000Z",
+        connections=[
+            ThinkingConnection(title="Alpha", source_id="id-a"),
+            ThinkingConnection(title="Beta", source_id="id-b"),
+        ],
+    )
+    other = ThinkingObject(
+        title="Another cluster",
+        source_id="folder-2",
+        status="folder",
+        updated_at="2026-08-12T10:00:00.000Z",
+        connections=[ThinkingConnection(title="Alpha", source_id="id-a")],
+    )
+    a = ThinkingObject(
+        title="Alpha",
+        source_id="id-a",
+        raw_thought="a",
+        updated_at="2026-08-12T10:00:00.000Z",
+    )
+    b = ThinkingObject(
+        title="Beta",
+        source_id="id-b",
+        raw_thought="b",
+        updated_at="2026-08-12T10:00:00.000Z",
+    )
+
+    r1 = apply_thinking_objects(
+        db_session, [folder, other, a, b], vault_path=str(vault_path)
+    )
+    assert r1.folders == 2
+    assert any("claimed by multiple folders" in w for w in r1.warnings)
+    # Lexicographically smallest folder title wins: "Another cluster" < "Vertigo cluster"
+    alpha = vault_path / "Thinking" / "Another cluster" / "Alpha.md"
+    beta = vault_path / "Thinking" / "Vertigo cluster" / "Beta.md"
+    assert alpha.is_file()
+    assert beta.is_file()
+    assert (vault_path / "Thinking" / "Another cluster" / FOLDER_SIDECAR).is_file()
+    assert not (vault_path / "Thinking" / "Alpha.md").exists()
+    # Folder page body/props must not become a note
+    assert not (vault_path / "Thinking" / "Vertigo cluster.md").exists()
+    assert "Notion-only" not in beta.read_text(encoding="utf-8")
+
+    # Rename folder + remove Alpha membership from Vertigo (still in Another)
+    folder.title = "Vestibular cluster"
+    folder.connections = [ThinkingConnection(title="Beta", source_id="id-b")]
+    folder.updated_at = "2026-08-12T11:00:00.000Z"
+    r2 = apply_thinking_objects(
+        db_session, [folder, other, a, b], vault_path=str(vault_path)
+    )
+    assert r2.renamed >= 1 or (vault_path / "Thinking" / "Vestibular cluster").is_dir()
+    assert (vault_path / "Thinking" / "Vestibular cluster" / "Beta.md").is_file()
+    assert not (vault_path / "Thinking" / "Vertigo cluster").exists()
+
+    # Remove Alpha from all folders → back to Thinking root
+    other.connections = []
+    other.updated_at = "2026-08-12T12:00:00.000Z"
+    r3 = apply_thinking_objects(
+        db_session, [folder, other, a, b], vault_path=str(vault_path)
+    )
+    assert (vault_path / "Thinking" / "Alpha.md").is_file()
+    assert not (vault_path / "Thinking" / "Another cluster" / "Alpha.md").exists()
+    assert r3.errors == []
+
+    # Soft-archive missing folder page
+    r4 = apply_thinking_objects(db_session, [other, a, b], vault_path=str(vault_path))
+    assert r4.archived >= 1
+    archived_dirs = [
+        p for p in (vault_path / "Archive" / "Thinking").iterdir() if p.is_dir()
+    ]
+    assert archived_dirs
+
+
+def test_nested_folder_membership(db_session, vault_path: Path):
+    parent = ThinkingObject(
+        title="Parent theme",
+        source_id="folder-parent",
+        status="folder",
+        updated_at="2026-08-12T10:00:00.000Z",
+        connections=[ThinkingConnection(title="Child theme", source_id="folder-child")],
+    )
+    child = ThinkingObject(
+        title="Child theme",
+        source_id="folder-child",
+        status="folder",
+        updated_at="2026-08-12T10:00:00.000Z",
+        connections=[ThinkingConnection(title="Leaf", source_id="id-leaf")],
+    )
+    leaf = ThinkingObject(
+        title="Leaf",
+        source_id="id-leaf",
+        raw_thought="nested",
+        updated_at="2026-08-12T10:00:00.000Z",
+    )
+    result = apply_thinking_objects(
+        db_session, [parent, child, leaf], vault_path=str(vault_path)
+    )
+    assert result.errors == []
+    nested = vault_path / "Thinking" / "Parent theme" / "Child theme" / "Leaf.md"
+    assert nested.is_file()
+    assert "nested" in nested.read_text(encoding="utf-8")
+
+
 def test_adapter_with_mocked_notion(db_session, vault_path: Path):
     page_a = _page(
         "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa",

@@ -143,16 +143,25 @@ Empty properties / empty page body are omitted on export. Raw Thought must never
 | Name | Title | `title` | `# Title` + filename |
 | Created | Created time | `created_at` | frontmatter `created` |
 | Updated | Last edited time | `updated_at` | frontmatter `updated` |
-| Status | Select | `status` | index/log only (not graph) |
-| Raw Thought | Rich text | `raw_thought` | `## Raw Thought` |
-| Context | Rich text | `context` | `## Context` as `[[A]]; [[B]]` (semicolon-separated anchors) |
-| Observation | Rich text | `observation` | `## Observation` |
-| Interpretation | Rich text | `interpretation` | `## Interpretation` |
-| Uncertainty | Rich text | `uncertainty` | `## Uncertainty` |
-| Questions | Rich text | `questions` | `## Questions` |
-| Later Reflection | Rich text | `later_reflection` | `## Later Reflection` |
-| Related Information | Relation | `connections[]` | `## Connections` + `[[Title]]` |
-| *(page body blocks)* | Blocks | `page_body` | `## Extended Reflection` |
+| Status | Select | `status` | index/log only (not graph); `folder` triggers directory sync |
+| Raw Thought | Rich text | `raw_thought` | `## Raw Thought` (skipped when Status=`folder`) |
+| Context | Rich text | `context` | `## Context` as `[[A]]; [[B]]` (semicolon-separated anchors; skipped for `folder`) |
+| Observation | Rich text | `observation` | `## Observation` (skipped for `folder`) |
+| Interpretation | Rich text | `interpretation` | `## Interpretation` (skipped for `folder`) |
+| Uncertainty | Rich text | `uncertainty` | `## Uncertainty` (skipped for `folder`) |
+| Questions | Rich text | `questions` | `## Questions` (skipped for `folder`) |
+| Later Reflection | Rich text | `later_reflection` | `## Later Reflection` (skipped for `folder`) |
+| Related Information | Relation | `connections[]` | notes: `## Connections` + `[[Title]]`; **folder**: membership → move notes into `Title/` |
+| *(page body blocks)* | Blocks | `page_body` | `## Extended Reflection` (skipped for `folder`) |
+
+#### Status = `folder` (real directory sync)
+
+- Obsidian creates a **real folder** named after `Name` (no index / MOC note).
+- `Related Information` lists member Thinking pages; sync moves those `.md` files into the folder.
+- Nested folders are allowed when a folder relates to another folder; cycles are skipped with an error.
+- If multiple folders claim the same note, the **lexicographically smallest folder title** wins (warning logged).
+- Folder page properties + page body stay **Notion-only** (AI writing / style guidance); they never become Obsidian sections.
+- Folder identity: SQLite `ThinkingSyncState.vault_path` points at the directory; a hidden `.thinking-folder` sidecar stores `source_id` + `title`.
 
 **Do not** add domain/category/topic/priority/maturity taxonomies in V1.
 
@@ -328,4 +337,4 @@ No Research Engine, no auto Research Brief generation in V1.
 
 ## 12. Explicit non-goals (V1)
 
-Bidirectional sync · autonomous graph generation · heavy ontology/tags · taxonomy folders under Thinking · auto Research Brief · social/recommendation · custom Notion replacement · second website Thinking database.
+Bidirectional sync · autonomous graph generation · heavy ontology/tags · ad-hoc taxonomy folders under Thinking (except explicit `Status=folder` pages) · auto Research Brief · social/recommendation · custom Notion replacement · second website Thinking database.

@@ -57,7 +57,7 @@ Silent coexistence of obsolete rules is not allowed after implementation lands.
 | Roots: Concepts/Projects/Reflections/Books/Reports/… | **DEPRECATE** as primary IA | Keep files in place; stop promoting as day-to-day home |
 | Roots: Library/Articles\|Emails\|Books | **KEEP** (transitional Information) | Later map/rename toward `Information/` if needed |
 | Target roots: Information/Thinking/Research | **MODIFY** (introduce) | Scaffold in workspace config; Writer targets `Thinking/` |
-| Thinking/Ideas\|Clinical\|Questions subfolders | **REMOVE** (never add) | Flat `Thinking/*.md` only |
+| Thinking/Ideas\|Clinical\|Questions subfolders | **REMOVE** (never add ad-hoc) | Flat `Thinking/*.md` by default; explicit `Status=folder` pages may create real directories |
 | Archive/ for history | **KEEP** | Soft-delete / Notion deletion lands here |
 | 90_Meta conventions | **KEEP** | Update Import Conventions for Thinking sync |
 | Collections/ human indexes | **KEEP** | Unchanged |

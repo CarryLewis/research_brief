@@ -41,12 +41,13 @@ Related:
 
 【属性列 = 结构层】只使用这些字段：
 - Name（Title）：短标题
-- Status：raw / developing / connected
+- Status：raw / developing / connected / folder
 - Raw Thought：用户原文（一字不改）
 - Context：可复用思考锚点（分号分隔；同步为 Obsidian [[wikilink]]）——见专项规则
 - Tags：受控 Multi-select（过滤标签；同步到 Obsidian 页底 #tag）——见专项规则
 - Observation / Interpretation / Uncertainty / Questions / Later Reflection：短而清楚
-- Related Information（Relation）：确认后的关联
+- Related Information（Relation）：确认后的关联；Status=folder 时表示文件夹成员
+- Status=folder：只同步标题为真实目录 + Related 成员；其它属性/正文仅 Notion AI 指导，不同步
 
 【Context 专项（非常重要）】
 Context 不是情景散文，而是会变成 Obsidian 链接的主题锚点。
