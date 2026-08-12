@@ -104,10 +104,12 @@ def normalize_page(
     *,
     relation_titles: dict[str, str] | None = None,
     property_cfg: dict[str, Any] | None = None,
+    page_body: str = "",
 ) -> ThinkingObject:
     """Convert one Notion page JSON into a ThinkingObject.
 
     `relation_titles` maps related page id → current title for Wikilinks.
+    `page_body` is Markdown derived from Notion page blocks (optional).
     """
     names = property_names(property_cfg)
     props = page.get("properties") or {}
@@ -137,6 +139,7 @@ def normalize_page(
         uncertainty=extract_rich_text_prop(props, names["uncertainty"]),
         questions=extract_rich_text_prop(props, names["questions"]),
         later_reflection=extract_rich_text_prop(props, names["later_reflection"]),
+        page_body=(page_body or "").strip(),
         connections=connections,
         status=extract_select_prop(props, names["status"]),
     )

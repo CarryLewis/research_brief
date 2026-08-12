@@ -124,6 +124,7 @@ def test_render_markdown_omits_empty_sections_and_keeps_raw():
         updated_at="2026-08-12T10:00:00.000Z",
         raw_thought="今天夜班……",
         interpretation="Not vertigo.",
+        page_body="更细致的反思：患者用词与我的临床分类可能错位。",
         connections=[ThinkingConnection(title="Clinical communication")],
     )
     md = render_markdown(obj)
@@ -132,8 +133,45 @@ def test_render_markdown_omits_empty_sections_and_keeps_raw():
     assert "今天夜班……" in md
     assert "## Interpretation" in md
     assert "## Context" not in md
+    assert "## Extended Reflection" in md
+    assert "更细致的反思" in md
+    assert md.index("## Extended Reflection") < md.index("## Connections")
     assert "[[Clinical communication]]" in md
     assert "## Connections" in md
+
+
+def test_blocks_to_markdown_basic():
+    from app.services.thinking_vault.blocks import blocks_to_markdown
+
+    blocks = [
+        {
+            "type": "paragraph",
+            "paragraph": {"rich_text": _rich("第一段详细反思。")},
+        },
+        {
+            "type": "heading_2",
+            "heading_2": {"rich_text": _rich("进一步观察")},
+        },
+        {
+            "type": "bulleted_list_item",
+            "bulleted_list_item": {"rich_text": _rich("条目一")},
+        },
+    ]
+    md = blocks_to_markdown(blocks)
+    assert "第一段详细反思。" in md
+    assert "## 进一步观察" in md
+    assert "- 条目一" in md
+
+
+def test_normalize_includes_page_body():
+    page = _page(
+        "11111111-1111-1111-1111-111111111111",
+        "Demo",
+        raw="raw",
+    )
+    obj = normalize_page(page, page_body="详细正文")
+    assert obj.page_body == "详细正文"
+    assert "详细正文" in obj.content_fingerprint()
 
 
 def test_writer_create_update_rename_idempotent(vault_path: Path):
@@ -246,10 +284,31 @@ def test_adapter_with_mocked_notion(db_session, vault_path: Path):
     )
 
     def handler(request: httpx.Request) -> httpx.Response:
-        if request.url.path.endswith("/databases/dddddddd-dddd-dddd-dddd-dddddddddddd/query"):
+        path = request.url.path
+        if path.endswith("/databases/dddddddd-dddd-dddd-dddd-dddddddddddd/query"):
             return httpx.Response(
                 200,
                 json={"results": [page_a, page_b], "has_more": False, "next_cursor": None},
+            )
+        if "/blocks/" in path and path.endswith("/children"):
+            page_id = path.split("/blocks/")[1].split("/children")[0]
+            if page_id.startswith("aaaaaaaa"):
+                results = [
+                    {
+                        "object": "block",
+                        "id": "block-1",
+                        "type": "paragraph",
+                        "has_children": False,
+                        "paragraph": {
+                            "rich_text": _rich("夜班里我对头晕/vertigo 的错位感写得更细。")
+                        },
+                    }
+                ]
+            else:
+                results = []
+            return httpx.Response(
+                200,
+                json={"results": results, "has_more": False, "next_cursor": None},
             )
         return httpx.Response(404, json={"message": "not found"})
 
@@ -273,6 +332,7 @@ def test_adapter_with_mocked_notion(db_session, vault_path: Path):
     assert len(objects) == 2
     night = next(o for o in objects if o.title == "Night Shift Observation")
     assert night.raw_thought == "头晕"
+    assert "错位感" in night.page_body
     assert night.connections[0].title == "Clinical communication"
 
     result = apply_thinking_objects(db_session, objects, vault_path=str(vault_path))
@@ -280,3 +340,5 @@ def test_adapter_with_mocked_notion(db_session, vault_path: Path):
     md = (vault_path / "Thinking" / "Night Shift Observation.md").read_text(encoding="utf-8")
     assert "[[Clinical communication]]" in md
     assert "## Raw Thought" in md
+    assert "## Extended Reflection" in md
+    assert "错位感" in md

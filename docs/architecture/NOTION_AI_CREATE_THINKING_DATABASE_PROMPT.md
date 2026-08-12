@@ -75,7 +75,8 @@ Name | Status | Raw Thought | Context | Observation | Interpretation | Uncertain
 # 完成后请告诉我
 1. Database 已创建，并列出所有属性名与类型
 2. 如何复制 database id（URL 中那串 id）以便配置同步
-3. 提醒：之后和 Notion AI 对话可以在正文进行，但要同步到 Obsidian 的内容必须写入上述属性列
+3. 提醒：属性列保存结构化短字段；更细致的反思写在页面正文（会同步为 Obsidian ## Extended Reflection）
+4. 提醒：之后和 Notion AI 对话可以先澄清，但要同步的内容必须写入属性列和/或页面正文
 ```
 
 ---

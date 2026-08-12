@@ -63,8 +63,12 @@ Thinking/{Name}.md
 
 ---
 
-## 5. Conversation vs properties
+## 5. Conversation vs properties vs page body
 
-Notion AI chat may happen in the page body. Until you (or a workflow) copy structured fields into the property columns above, Sync will not see that content.
+- **Properties:** short structured slots (Raw Thought, Context, …). Always keep Raw Thought as the original line.
+- **Page body:** longer, finer reflection / narrative. Notion AI **should** write detailed thoughts here.
+- **Chat-only text** that never lands in properties or page body will **not** sync.
 
-Recommended habit: after clarify, put Raw Thought + structured fields into the columns, then sync.
+Recommended habit: clarify → fill properties → expand detailed reflection in the page body → sync.
+
+Both properties and page body are included in Obsidian (`## Extended Reflection` for page body).

@@ -122,6 +122,62 @@ class NotionClient:
     def retrieve_page(self, page_id: str) -> dict[str, Any]:
         return self._request("GET", f"/pages/{_normalize_notion_id(page_id)}")
 
+    def list_block_children(
+        self,
+        block_id: str,
+        *,
+        start_cursor: str | None = None,
+        page_size: int = 100,
+    ) -> dict[str, Any]:
+        params: dict[str, Any] = {"page_size": page_size}
+        if start_cursor:
+            params["start_cursor"] = start_cursor
+        return self._request(
+            "GET",
+            f"/blocks/{_normalize_notion_id(block_id)}/children",
+            params=params,
+        )
+
+    def iter_block_children(
+        self,
+        block_id: str,
+        *,
+        page_size: int = 100,
+        max_depth: int = 3,
+        _depth: int = 0,
+    ) -> list[dict[str, Any]]:
+        """Return nested block tree (children attached as `_children`)."""
+        results: list[dict[str, Any]] = []
+        cursor: str | None = None
+        while True:
+            data = self.list_block_children(
+                block_id,
+                start_cursor=cursor,
+                page_size=page_size,
+            )
+            for block in data.get("results") or []:
+                if (
+                    _depth < max_depth
+                    and isinstance(block, dict)
+                    and block.get("has_children")
+                ):
+                    child_id = str(block.get("id") or "")
+                    if child_id:
+                        block = dict(block)
+                        block["_children"] = self.iter_block_children(
+                            child_id,
+                            page_size=page_size,
+                            max_depth=max_depth,
+                            _depth=_depth + 1,
+                        )
+                results.append(block)
+            if not data.get("has_more"):
+                break
+            cursor = data.get("next_cursor")
+            if not cursor:
+                break
+        return results
+
 
 def _normalize_notion_id(value: str) -> str:
     raw = (value or "").strip().replace("-", "")

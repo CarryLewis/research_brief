@@ -25,6 +25,9 @@ SECTION_HEADINGS: dict[str, str] = {
     "later_reflection": "Later Reflection",
 }
 
+# Notion page body (blocks) → Obsidian section; not a database property.
+PAGE_BODY_HEADING = "Extended Reflection"
+
 
 @dataclass
 class ThinkingConnection:
@@ -61,6 +64,7 @@ class ThinkingObject:
     uncertainty: str = ""
     questions: str = ""
     later_reflection: str = ""
+    page_body: str = ""
     connections: list[ThinkingConnection] = field(default_factory=list)
     status: str = ""
 
@@ -71,6 +75,7 @@ class ThinkingObject:
         self.created_at = (self.created_at or "").strip()
         self.updated_at = (self.updated_at or "").strip()
         self.status = (self.status or "").strip()
+        self.page_body = (self.page_body or "").strip()
         for name in SECTION_FIELDS:
             setattr(self, name, (getattr(self, name) or "").strip())
         cleaned: list[ThinkingConnection] = []
@@ -104,6 +109,7 @@ class ThinkingObject:
             self.uncertainty,
             self.questions,
             self.later_reflection,
+            self.page_body,
         ]
         for conn in self.connections:
             parts.append(f"{conn.source_id}:{conn.title}")

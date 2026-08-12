@@ -11,7 +11,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 from ...utils import content_hash, workspace_config_dict
-from .model import SECTION_FIELDS, SECTION_HEADINGS, ThinkingObject
+from .model import PAGE_BODY_HEADING, SECTION_FIELDS, SECTION_HEADINGS, ThinkingObject
 
 logger = logging.getLogger(__name__)
 
@@ -63,7 +63,7 @@ def _yaml_escape(value: str) -> str:
 
 
 def render_markdown(obj: ThinkingObject) -> str:
-    """Render minimal frontmatter + non-empty sections + Connections."""
+    """Render minimal frontmatter + non-empty sections + page body + Connections."""
     lines = [
         "---",
         "source: notion",
@@ -80,6 +80,10 @@ def render_markdown(obj: ThinkingObject) -> str:
             continue
         heading = SECTION_HEADINGS[field_name]
         lines.extend(["", f"## {heading}", "", body])
+
+    page_body = (obj.page_body or "").strip()
+    if page_body:
+        lines.extend(["", f"## {PAGE_BODY_HEADING}", "", page_body])
 
     if obj.connections:
         lines.extend(["", "## Connections", ""])

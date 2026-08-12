@@ -128,8 +128,15 @@ Notion does **not** own:
 
 ### 3.1 Thinking Database — property columns are content SoT (V1)
 
-**MODIFY (locked):** V1 sync reads **Database property columns**, not page-body headings.
-Page body may hold conversational scratch; only values written into properties enter Obsidian.
+**MODIFY (locked):** V1 sync reads **Database property columns** for structured slots,
+**and also syncs the Notion page body** as detailed reflection.
+
+| Layer | Role |
+|-------|------|
+| Property columns | Compact structured fields (index + core slots) |
+| Page body (blocks) | Longer, finer reflection / narrative — synced to Obsidian |
+
+Empty properties / empty page body are omitted on export. Raw Thought must never be replaced by AI polish.
 
 | Notion property | Type | → Canonical | → Obsidian |
 |-----------------|------|-------------|------------|
@@ -145,8 +152,7 @@ Page body may hold conversational scratch; only values written into properties e
 | Questions | Rich text | `questions` | `## Questions` |
 | Later Reflection | Rich text | `later_reflection` | `## Later Reflection` |
 | Related Information | Relation | `connections[]` | `## Connections` + `[[Title]]` |
-
-Empty properties are omitted on export. Raw Thought must never be replaced by AI polish.
+| *(page body blocks)* | Blocks | `page_body` | `## Extended Reflection` |
 
 **Do not** add domain/category/topic/priority/maturity taxonomies in V1.
 
@@ -234,6 +240,7 @@ interpretation
 uncertainty
 questions       # string (rich text); may contain list lines
 later_reflection
+page_body       # Notion page blocks → Markdown (Extended Reflection)
 connections[]   # {source_id?, title} resolved to Wikilink targets
 status
 ```

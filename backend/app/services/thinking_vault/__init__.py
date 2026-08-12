@@ -1,6 +1,7 @@
 """Thinking Vault V1 — Notion property columns → Obsidian Thinking/*.md."""
 
 from .adapter import NotionThinkingAdapter
+from .blocks import blocks_to_markdown
 from .model import ThinkingConnection, ThinkingObject
 from .normalizer import normalize_page
 from .notion_client import NotionAPIError, NotionClient
@@ -15,6 +16,7 @@ __all__ = [
     "ThinkingConnection",
     "ThinkingObject",
     "apply_thinking_objects",
+    "blocks_to_markdown",
     "last_sync_status",
     "normalize_page",
     "render_markdown",
