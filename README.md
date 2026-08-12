@@ -1,6 +1,8 @@
 # Research Brief Studio — Knowledge OS
 
-Canonical architecture (all plan versions merged): **[docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)**
+**Thinking Vault (priority):** [`docs/architecture/THINKING_VAULT_ARCHITECTURE.md`](docs/architecture/THINKING_VAULT_ARCHITECTURE.md) — Notion property columns → `Thinking/*.md` one-way sync.
+
+Canonical Knowledge OS inventory: **[docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)**
 
 Four layers + intellectual lifecycle:
 
@@ -20,6 +22,11 @@ Signal → Resource → Knowledge Object → Reflection → Concept → Project 
 
 ```bash
 cd backend && source .venv/bin/activate
+
+# Thinking Vault: Notion → Obsidian Thinking/
+# (requires NOTION_TOKEN + NOTION_THINKING_DATABASE_ID; see docs/architecture/NOTION_THINKING_DATABASE_CHECKLIST.md)
+python -m app.cli.thinking_sync --vault ../vault
+python -m app.cli.thinking_sync --status
 
 # Capture → Lake + Resource/Signal KO (vault unchanged)
 python -m app.cli.collect --job ../jobs/nature_migraine.yaml --no-media

@@ -52,6 +52,10 @@ from .schemas import (
     SubscriptionCreate,
     SubscriptionOut,
     SubscriptionUpdate,
+    ThinkingSyncRequest,
+    ThinkingSyncResult,
+    ThinkingSyncStatusOut,
+    ThinkingSyncItemOut,
 )
 from .services import channels as channels_svc
 from .services import collect as collect_svc
@@ -66,6 +70,7 @@ from .services import notebook as notebook_svc
 from .services import retrieve as retrieve_svc
 from .services import subscriptions as subs_svc
 from .services import thinking as thinking_svc
+from .services import thinking_vault as thinking_vault_svc
 from .services import workspace as workspace_svc
 from .utils import loads
 
@@ -158,6 +163,46 @@ def library_save(
         image_errors=result.image_errors,
         vault_path=str(Path(vault).expanduser()),
     )
+
+
+@router.post("/thinking/sync", response_model=ThinkingSyncResult)
+def thinking_sync(payload: ThinkingSyncRequest, db: Session = Depends(get_db)):
+    """One-way Notion Thinking Database → Obsidian Thinking/*.md sync."""
+    settings = get_settings()
+    vault = (payload.vault_path or settings.default_vault_path or "").strip()
+    if not vault:
+        raise HTTPException(400, "vault_path is required (or set DEFAULT_VAULT_PATH)")
+    token = (settings.notion_token or "").strip()
+    database_id = (settings.notion_thinking_database_id or "").strip()
+    if not token:
+        raise HTTPException(400, "NOTION_TOKEN is not configured")
+    if not database_id:
+        raise HTTPException(400, "NOTION_THINKING_DATABASE_ID is not configured")
+
+    result = thinking_vault_svc.sync_from_notion(
+        db,
+        vault_path=vault,
+        token=token,
+        database_id=database_id,
+        soft_archive_missing=payload.soft_archive_missing,
+    )
+    return ThinkingSyncResult(
+        ok=not result.errors,
+        created=result.created,
+        updated=result.updated,
+        renamed=result.renamed,
+        unchanged=result.unchanged,
+        archived=result.archived,
+        errors=result.errors,
+        items=[ThinkingSyncItemOut(**item) for item in result.items],
+    )
+
+
+@router.get("/thinking/sync/status", response_model=ThinkingSyncStatusOut)
+def thinking_sync_status(db: Session = Depends(get_db)):
+    """Return Thinking Vault sync index counts."""
+    status = thinking_vault_svc.last_sync_status(db)
+    return ThinkingSyncStatusOut(**status)
 
 
 @router.post("/collect", response_model=CollectResult)

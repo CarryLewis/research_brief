@@ -115,8 +115,7 @@ Notion owns:
 
 - Mobile / fast capture
 - Conversational clarify (CAPTURE / CLARIFY / CONNECT / DEVELOP as behaviors)
-- Minimal Thinking Database (index, not ontology)
-- Page body as thinking content
+- Thinking Database with **predefined property columns** (V1 content contract)
 - Lightweight status + Related Information relations
 - Editing and recent review
 
@@ -127,29 +126,31 @@ Notion does **not** own:
 - Website presentation
 - Content Lake / crawler memory
 
-### 3.1 Thinking Database (minimal)
+### 3.1 Thinking Database — property columns are content SoT (V1)
 
-Required properties (prefer fewer if integration allows):
+**MODIFY (locked):** V1 sync reads **Database property columns**, not page-body headings.
+Page body may hold conversational scratch; only values written into properties enter Obsidian.
 
-| Property | Purpose |
-|----------|---------|
-| Name | Title |
-| Created | Timestamp |
-| Updated | Timestamp |
-| Status | Lightweight lifecycle hint |
-| Related Information | Relation → Wikilink targets |
+| Notion property | Type | → Canonical | → Obsidian |
+|-----------------|------|-------------|------------|
+| Name | Title | `title` | `# Title` + filename |
+| Created | Created time | `created_at` | frontmatter `created` |
+| Updated | Last edited time | `updated_at` | frontmatter `updated` |
+| Status | Select | `status` | index/log only (not graph) |
+| Raw Thought | Rich text | `raw_thought` | `## Raw Thought` |
+| Context | Rich text | `context` | `## Context` |
+| Observation | Rich text | `observation` | `## Observation` |
+| Interpretation | Rich text | `interpretation` | `## Interpretation` |
+| Uncertainty | Rich text | `uncertainty` | `## Uncertainty` |
+| Questions | Rich text | `questions` | `## Questions` |
+| Later Reflection | Rich text | `later_reflection` | `## Later Reflection` |
+| Related Information | Relation | `connections[]` | `## Connections` + `[[Title]]` |
+
+Empty properties are omitted on export. Raw Thought must never be replaced by AI polish.
 
 **Do not** add domain/category/topic/priority/maturity taxonomies in V1.
 
-### 3.2 Page body (optional sections)
-
-Preserve incomplete thinking. Omit empty sections on export.
-
-- Raw Thought (**non-negotiable preserve**)
-- Context / Observation / Interpretation / Uncertainty / Questions
-- Connections / Later Reflection
-
-AI may structure alongside Raw Thought; AI must **never** replace Raw Thought.
+See manual setup: [`NOTION_THINKING_DATABASE_CHECKLIST.md`](NOTION_THINKING_DATABASE_CHECKLIST.md).
 
 ---
 
@@ -218,7 +219,7 @@ SQLite may store sync state (`source_id`, content hash, `vault_path`, last synce
 
 ## 6. Canonical Thinking Object
 
-Internal contract (not a user-facing form):
+Internal contract (not a user-facing form). Populated from Notion **property columns**:
 
 ```text
 title
@@ -231,8 +232,9 @@ context
 observation
 interpretation
 uncertainty
-questions[]
-connections[]   # titles / ids resolved to Wikilink targets
+questions       # string (rich text); may contain list lines
+later_reflection
+connections[]   # {source_id?, title} resolved to Wikilink targets
 status
 ```
 
@@ -285,20 +287,22 @@ No Research Engine, no auto Research Brief generation in V1.
 
 ## 10. Implementation map (smallest delta)
 
-| New | Role |
-|-----|------|
-| `backend/app/connectors/notion.py` or `services/notion_client.py` | Thin Notion API read |
-| `backend/app/services/thinking_vault/adapter.py` | Fetch DB pages, body, relations, deltas |
-| `backend/app/services/thinking_vault/normalizer.py` | Notion → Canonical Thinking Object |
-| `backend/app/services/thinking_vault/model.py` | Dataclass / Pydantic contract |
-| `backend/app/services/thinking_vault/writer.py` | Canonical → `Thinking/*.md` |
-| `backend/app/services/thinking_vault/sync.py` | Orchestrate idempotent sync |
-| Sync state table or metadata | `source_id` ↔ `vault_path` + hashes |
-| `POST /api/thinking/sync` + CLI | Triggers |
-| Config | `NOTION_TOKEN`, `NOTION_THINKING_DATABASE_ID`, vault path |
-| Tests | model, adapter (mocked), writer, sync scenarios |
+| Module | Role |
+|--------|------|
+| [`backend/app/services/thinking_vault/model.py`](../../backend/app/services/thinking_vault/model.py) | Canonical Thinking Object |
+| [`backend/app/services/thinking_vault/notion_client.py`](../../backend/app/services/thinking_vault/notion_client.py) | Thin Notion API read client |
+| [`backend/app/services/thinking_vault/adapter.py`](../../backend/app/services/thinking_vault/adapter.py) | Fetch DB pages, properties, relations |
+| [`backend/app/services/thinking_vault/normalizer.py`](../../backend/app/services/thinking_vault/normalizer.py) | Properties → canonical object |
+| [`backend/app/services/thinking_vault/writer.py`](../../backend/app/services/thinking_vault/writer.py) | Canonical → `Thinking/*.md` |
+| [`backend/app/services/thinking_vault/sync.py`](../../backend/app/services/thinking_vault/sync.py) | Idempotent sync + soft-archive |
+| `thinking_sync_state` table | `source_id` ↔ `vault_path` + hashes |
+| `POST /api/thinking/sync` + `GET /api/thinking/sync/status` | Triggers / status |
+| `python -m app.cli.thinking_sync` | CLI sync |
+| Config | `NOTION_TOKEN`, `NOTION_THINKING_DATABASE_ID`, `workspace.yaml` `thinking_vault` |
+| Checklist | [`NOTION_THINKING_DATABASE_CHECKLIST.md`](NOTION_THINKING_DATABASE_CHECKLIST.md) |
+| Tests | `backend/tests/test_thinking_vault.py` |
 
-**Reuse, do not rewrite:** Content Lake, collect connectors, Library save path, Graph rebuild mechanics, natural filename helpers from `workspace.py` (extract/share if needed).
+**Reuse, do not rewrite:** Content Lake, collect connectors, Library save path, Graph rebuild mechanics, natural filename helpers from `workspace.py`.
 
 **Website:** Phase 7 only — read Obsidian-derived Thinking; no independent website Thinking DB.
 

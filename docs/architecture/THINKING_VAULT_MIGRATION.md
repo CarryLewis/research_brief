@@ -26,7 +26,8 @@ Silent coexistence of obsolete rules is not allowed after implementation lands.
 |-------|----------|
 | Priority | Thinking Vault wins conflicts |
 | Vault roots | Move toward `Information/` · `Thinking/` · `Research/` |
-| Thinking SoT | Notion page → Obsidian file (one-way overwrite by `source_id`) |
+| Thinking SoT | Notion **property columns** → Obsidian file (one-way overwrite by `source_id`) |
+| Page body | Not primary sync source in V1 (conversation scratch only until properties are filled) |
 | SQLite | Sync index + optional graph projection — not competing editor |
 | Constitution `Reflections/` | Transitional; new Notion-sourced objects write to `Thinking/` |
 | Library `Library/` | KEEP for Information reading path until Information migration |
@@ -83,6 +84,8 @@ Silent coexistence of obsolete rules is not allowed after implementation lands.
 | Heavy lifecycle maturity as UX | **DEPRECATE** for Thinking capture UX | Backend may retain scores; user sees natural language |
 | workspace_role gate for vault notes | **MODIFY** | Add path for `thinking` (or map Notion sync outside promote gate) |
 | Large Notion property taxonomies | **REMOVE** | Minimal DB properties only |
+| Page body headings as Thinking content SoT | **MODIFY** | V1 content SoT = property columns (see Architecture §3.1) |
+| Parse page body `##` sections for sync | **REMOVE** for V1 | Adapter reads properties only |
 | Graph Engine rebuild / views | **KEEP** | Wire after Thinking files exist; no auto-link spam |
 | AI auto-create Concept vault notes | **KEEP** (still forbidden) | Propose only |
 | Suggest questions on reflection | **KEEP** optional | Must not overwrite Raw Thought |

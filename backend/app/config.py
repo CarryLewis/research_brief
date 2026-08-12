@@ -54,6 +54,11 @@ class Settings(BaseSettings):
     default_vault_path: str = ""
     # Shared token for browser extension ↔ local API (Bearer / X-Library-Token)
     library_api_token: str = ""
+
+    # Thinking Vault — Notion → Obsidian one-way sync
+    notion_token: str = ""
+    notion_thinking_database_id: str = ""
+
     host: str = "127.0.0.1"
     port: int = 8000
 

@@ -14,12 +14,23 @@ These constrain capture/sync. They are **not** how you should write day to day.
 
 | Folder | Purpose |
 |--------|---------|
-| `Reflections/` | Freeform thinking. Title + body. System will not wipe your file on bulk sync. |
+| `Thinking/` | **Thinking Vault (priority):** Notion property-column sync. Overwritten by sync on `source_id`. |
+| `Information/` / `Research/` | Target cognitive roots (Information may still live under `Library/` transitionally). |
+| `Reflections/` | Legacy freeform thinking. Title + body. System will not wipe your file on bulk Constitution sync. |
 | `Concepts/` / `Projects/` / `Books/` | Slim structured notes after ideas settle. Your `## Notes` section is preserved on sync. |
 | `Collections/` | Human indexes only |
-| `Archive/` | Legacy dumps — not for new thinking |
+| `Archive/` | Legacy dumps / soft-archived Thinking notes — not for new thinking |
 
-## Capture path
+## Thinking Vault path (Notion → Obsidian)
+
+1. Capture / clarify in Notion Thinking Database (**property columns**)
+2. `python -m app.cli.thinking_sync` or `POST /api/thinking/sync`
+3. Notes land in `Thinking/{Name}.md` with minimal `source` / `source_id` frontmatter
+4. `Related Information` → `## Connections` Wikilinks
+
+See [`docs/architecture/THINKING_VAULT_ARCHITECTURE.md`](../../docs/architecture/THINKING_VAULT_ARCHITECTURE.md) and the Notion checklist.
+
+## Capture path (Information / Knowledge OS)
 
 1. Capture → Content Lake + Resource KO (**database only**)
 2. AI may summarize & suggest Concepts (**database only**)
