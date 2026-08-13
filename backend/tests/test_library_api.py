@@ -62,7 +62,7 @@ def test_library_save_html_writes_article(client):
     assert data["ok"] is True
     assert data["created"] is True
     assert data["item_id"].startswith("lib_")
-    assert data["note_relpath"].startswith("Library/Articles/")
+    assert data["note_relpath"].startswith("Information/")
     assert data["source_url"] == "https://example.com/articles/migraine-pathways"
     assert "Migraine Pathways" in data["title"]
 
@@ -72,7 +72,7 @@ def test_library_save_html_writes_article(client):
     assert "cortical events" in text
     assert "visibility: private" in text
     assert "## Highlights" in text
-    assert (vault / "Library" / "Articles").is_dir()
+    assert (vault / "Information").is_dir()
 
 
 def test_library_save_body_md_and_x_library_token(client):

@@ -11,17 +11,16 @@ from tests.test_readable import SAMPLE_ARTICLE_HTML
 
 def test_ensure_library_scaffold(vault_path: Path):
     root = lib.ensure_library_scaffold(vault_path)
-    assert (root / "Library" / "Articles").is_dir()
-    assert (root / "Library" / "Emails").is_dir()
-    assert (root / "Library" / "Books").is_dir()
-    assert (root / "Library" / "Attachments").is_dir()
-    assert (root / "Library" / "Notes").is_dir()
+    assert (root / "Information").is_dir()
+    assert (root / "Information" / "Attachments").is_dir()
+    assert (root / "Thinking").is_dir()
+    assert (root / "Research").is_dir()
 
 
 def test_write_article_creates_product_v1_note(vault_path: Path):
     item = lib.LibraryItem(
         title="Migraine Pathways Explained",
-        body_md="Migraine is more than a headache.\n\n![map](../Attachments/lib_x/brain.png)",
+        body_md="Migraine is more than a headache.\n\n![map](Attachments/lib_x/brain.png)",
         canonical_url="https://example.com/articles/migraine-pathways",
         authors=["Ada Lovelace"],
         tags=["migraine"],
@@ -32,20 +31,20 @@ def test_write_article_creates_product_v1_note(vault_path: Path):
     result = lib.write_article(vault_path, item)
 
     assert result.created is True
-    assert result.note_relpath == "Library/Articles/Migraine Pathways Explained.md"
+    assert result.note_relpath == "Information/Migraine Pathways Explained.md"
     assert result.note_path.is_file()
-    assert result.attachments_dir == vault_path / "Library" / "Attachments" / "lib_x"
+    assert result.attachments_dir == vault_path / "Information" / "Attachments" / "lib_x"
 
     text = result.note_path.read_text(encoding="utf-8")
     assert text.startswith("---\n")
     meta, body = text.split("---\n", 2)[1], text.split("---\n", 2)[2]
     data = yaml.safe_load(meta)
     assert data["id"] == "lib_x"
-    assert data["type"] == "article"
+    assert data.get("type") is None  # folder implies Information role
     assert data["source_url"] == "https://example.com/articles/migraine-pathways"
     assert data["authors"] == ["Ada Lovelace"]
     assert data["visibility"] == "private"
-    assert data["status"] == "inbox"
+    assert "status" not in data or data.get("status") != "inbox"
     assert data["tags"] == ["migraine"]
     assert "captured_at" in data
 
@@ -136,9 +135,9 @@ def test_write_article_from_html_downloads_images(vault_path: Path):
 
     assert result.created is True
     assert result.images_downloaded == 1
-    assert result.note_relpath.startswith("Library/Articles/")
+    assert result.note_relpath.startswith("Information/")
     text = result.note_path.read_text(encoding="utf-8")
-    assert f"../Attachments/{result.item_id}/" in text
+    assert f"Attachments/{result.item_id}/" in text
     assert "https://example.com/images/brain-map.png" not in text
     assert "cortical events" in text
     assert "## Highlights" in text
@@ -149,7 +148,7 @@ def test_write_article_from_html_downloads_images(vault_path: Path):
     assert files[0].read_bytes() == png_bytes
 
     meta = yaml.safe_load(text.split("---\n", 2)[1])
-    assert meta["type"] == "article"
+    assert meta.get("type") is None
     assert meta["source_url"] == "https://example.com/articles/migraine-pathways"
     assert meta["authors"] == ["Ada Lovelace"]
     assert meta["visibility"] == "private"

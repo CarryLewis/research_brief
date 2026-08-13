@@ -35,7 +35,17 @@ def _new_ko(
         entities_json="[]",
         metadata_json="{}",
         workspace_role=workspace_role,
-        graph_eligible=1 if workspace_role in {"concept", "project", "reflection", "book"} else 0,
+        graph_eligible=1 if workspace_role in {
+            "concept",
+            "project",
+            "reflection",
+            "book",
+            "thinking",
+            "research",
+            "information",
+            "insight",
+            "question",
+        } else 0,
         lifecycle_stage=lifecycle_stage,
         maturity="candidate" if kind == "concept" else "",
         confidence=confidence,
@@ -304,14 +314,14 @@ def create_insight(
     life_cfg = lifecycle_config_dict() or {}
     if vault_path and (
         sync_as_reflection
-        or (life_cfg.get("sync_insights_to_vault") and life_cfg.get("insight_vault_folder"))
+        or life_cfg.get("sync_insights_to_vault")
     ):
-        # Prefer dedicated Insights/ when explicitly enabled; else reflection-linked note
-        if life_cfg.get("sync_insights_to_vault") and not sync_as_reflection:
-            ko.workspace_role = "insight"
-            ko.graph_eligible = 0
+        # Constitution V1.1: mature insights → Research/; reflection-linked → Thinking/
+        if sync_as_reflection and not life_cfg.get("sync_insights_to_vault"):
+            ko.workspace_role = "thinking"
+            ko.graph_eligible = 1
         else:
-            ko.workspace_role = "reflection"
+            ko.workspace_role = "research"
             ko.graph_eligible = 1
         db.commit()
         workspace_svc.sync_note(db, ko, vault_path=vault_path)

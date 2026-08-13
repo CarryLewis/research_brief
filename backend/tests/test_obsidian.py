@@ -13,9 +13,14 @@ from app.utils import new_id
 
 
 def test_folder_for_role():
-    assert workspace_svc.folder_for_role("book") == "Books"
-    assert workspace_svc.folder_for_role("concept") == "Concepts"
-    assert workspace_svc.folder_for_role("project") == "Projects"
+    assert workspace_svc.folder_for_role("book") == "Information"
+    assert workspace_svc.folder_for_role("concept") == "Thinking"
+    assert workspace_svc.folder_for_role("project") == "Thinking"
+    assert workspace_svc.folder_for_role("reflection") == "Thinking"
+    assert workspace_svc.folder_for_role("insight") == "Research"
+    assert workspace_svc.folder_for_role("information") == "Information"
+    assert workspace_svc.folder_for_role("thinking") == "Thinking"
+    assert workspace_svc.folder_for_role("research") == "Research"
 
 
 def test_export_resources_is_noop(db_session, vault_path):
@@ -40,12 +45,12 @@ def test_export_resources_is_noop(db_session, vault_path):
         db_session, nb, vault_path=str(vault_path), source_ids=[src.id]
     )
     assert result.sources_written == 0
-    assert not list((vault_path / "Concepts").glob("*.md"))
+    assert not list((vault_path / "Thinking").glob("*.md"))
     assert not (vault_path / "Knowledge" / "Inbox").exists()
+    assert not (vault_path / "Inbox").exists()
 
 
 def test_collect_does_not_write_inbox_notes(db_session, vault_path, monkeypatch):
-    # Avoid network: stub ingest to return empty docs after creating nothing
     from app.services import collect as collect_svc
     from app.services import ingest as ingest_svc
 
@@ -80,9 +85,12 @@ def test_collect_does_not_write_inbox_notes(db_session, vault_path, monkeypatch)
     assert result.added == 1
     assert result.sources_written == 0
     assert not list(vault_path.rglob("Fake Migraine Paper.md"))
-    # Scaffold exists
-    assert (vault_path / "Concepts").is_dir()
-    assert (vault_path / "Projects").is_dir()
+    # V1.1 cognitive scaffold exists — not typed forest
+    assert (vault_path / "Information").is_dir()
+    assert (vault_path / "Thinking").is_dir()
+    assert (vault_path / "Research").is_dir()
+    assert not (vault_path / "Concepts").is_dir()
+    assert not (vault_path / "Projects").is_dir()
 
 
 def test_write_report_off_graph(vault_path):
@@ -101,8 +109,9 @@ def test_write_report_off_graph(vault_path):
         period_end=end,
         subject="每周快报",
     )
-    assert daily.endswith("Reports/Daily/2026-08-01.md")
+    assert "Archive/Digests" in daily.replace("\\", "/")
+    assert daily.endswith("Archive/Digests/Daily/2026-08-01.md")
     assert "W" in Path(weekly).name
     text = Path(daily).read_text(encoding="utf-8")
-    assert "type: report" in text
-    assert "graph: false" in text
+    assert "graph: true" not in text
+    assert "period: daily" in text

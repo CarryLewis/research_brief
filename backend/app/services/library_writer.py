@@ -1,12 +1,11 @@
-"""Write Library notes into the Obsidian vault (PRODUCT_v1).
+"""Write Information notes into the Obsidian vault (Constitution V1.1).
 
 Layout:
-  Library/Articles/     — article notes
-  Library/Emails/       — email notes (same template, type: email)
-  Library/Books/        — book cards (later)
-  Library/Attachments/{id}/ — local media for an item
+  Information/                  — flat readable captures (articles, emails, books)
+  Information/Attachments/{id}/ — local media for an item
 
-Article notes follow PRODUCT_v1 §7.2: frontmatter + body + Highlights + Notes.
+Notes follow Constitution V1.1 minimal frontmatter + body + Highlights + Notes.
+Legacy name ``library_writer`` retained for API compatibility.
 """
 
 from __future__ import annotations
@@ -27,12 +26,9 @@ from app.utils import new_id
 LibraryType = Literal["article", "email", "book"]
 OnDuplicate = Literal["update", "skip", "new"]
 
-LIBRARY_ROOT = "Library"
-FOLDER_BY_TYPE: dict[str, str] = {
-    "article": "Articles",
-    "email": "Emails",
-    "book": "Books",
-}
+# V1.1 cognitive root (PRODUCT Library/* remapped)
+INFORMATION_ROOT = "Information"
+LIBRARY_ROOT = INFORMATION_ROOT  # backward-compatible alias
 ATTACHMENTS_FOLDER = "Attachments"
 
 _FRONTMATTER_RE = re.compile(r"\A---\s*\n(.*?)\n---\s*\n?(.*)\Z", re.DOTALL)
@@ -40,7 +36,7 @@ _FRONTMATTER_RE = re.compile(r"\A---\s*\n(.*?)\n---\s*\n?(.*)\Z", re.DOTALL)
 
 @dataclass
 class LibraryItem:
-    """Payload for one Library note."""
+    """Payload for one Information note (legacy Library Item name)."""
 
     title: str
     body_md: str
@@ -49,7 +45,7 @@ class LibraryItem:
     authors: list[str] = field(default_factory=list)
     tags: list[str] = field(default_factory=list)
     visibility: str = "private"
-    status: str = "inbox"
+    status: str = ""
     captured_at: str | None = None
     published_at: str | None = None
     item_id: str | None = None
@@ -74,22 +70,25 @@ class LibraryWriteResult:
 
 
 def ensure_library_scaffold(vault: Path | str) -> Path:
-    """Create Library/Articles|Emails|Books|Attachments (+ Notes)."""
+    """Create Information/ (+ Attachments). Thinking/Research via workspace scaffold."""
     root = Path(vault).expanduser()
     root.mkdir(parents=True, exist_ok=True)
-    lib = root / LIBRARY_ROOT
-    for name in (*FOLDER_BY_TYPE.values(), ATTACHMENTS_FOLDER, "Notes"):
-        (lib / name).mkdir(parents=True, exist_ok=True)
+    info = root / INFORMATION_ROOT
+    info.mkdir(parents=True, exist_ok=True)
+    (info / ATTACHMENTS_FOLDER).mkdir(parents=True, exist_ok=True)
+    (root / "Thinking").mkdir(parents=True, exist_ok=True)
+    (root / "Research").mkdir(parents=True, exist_ok=True)
+    (root / "90_Meta").mkdir(parents=True, exist_ok=True)
     return root
 
 
 def attachments_dir_for(vault: Path | str, item_id: str) -> Path:
-    return Path(vault).expanduser() / LIBRARY_ROOT / ATTACHMENTS_FOLDER / item_id
+    return Path(vault).expanduser() / INFORMATION_ROOT / ATTACHMENTS_FOLDER / item_id
 
 
 def attachment_markdown_prefix(item_id: str) -> str:
-    """Relative path from Library/Articles|Emails|Books note → Attachments/{id}/."""
-    return f"../{ATTACHMENTS_FOLDER}/{item_id}"
+    """Relative path from Information/ note → Attachments/{id}/."""
+    return f"{ATTACHMENTS_FOLDER}/{item_id}"
 
 
 def write_article(
@@ -98,8 +97,8 @@ def write_article(
     *,
     on_duplicate: OnDuplicate = "update",
 ) -> LibraryWriteResult:
-    """Write (or update) one article/email note. Does not fetch or parse HTML."""
-    if item.source_type not in FOLDER_BY_TYPE:
+    """Write (or update) one Information note. Does not fetch or parse HTML."""
+    if item.source_type not in {"article", "email", "book"}:
         raise ValueError(f"Unsupported source_type: {item.source_type}")
 
     vault = ensure_library_scaffold(vault_path)
@@ -140,7 +139,7 @@ def write_article(
     else:
         item_id = item.item_id or new_id("lib")
         item.item_id = item_id
-        folder = vault / LIBRARY_ROOT / FOLDER_BY_TYPE[item.source_type]
+        folder = vault / INFORMATION_ROOT
         folder.mkdir(parents=True, exist_ok=True)
         note_path = _unique_note_path(folder, item.title)
         created, updated = True, False
@@ -178,12 +177,11 @@ def write_article_from_html(
     client: httpx.Client | None = None,
     source_type: LibraryType = "article",
     visibility: str = "private",
-    status: str = "inbox",
+    status: str = "",
 ) -> LibraryWriteResult:
-    """Parse HTML → Markdown, download images into Attachments/{id}/, write Library note."""
+    """Parse HTML → Markdown, download images into Attachments/{id}/, write Information note."""
     vault = ensure_library_scaffold(vault_path)
 
-    # Resolve id early so image relative paths are stable.
     existing = None
     if base_url and on_duplicate != "new":
         existing = find_by_source_url(vault, base_url, source_type=source_type)
@@ -237,7 +235,7 @@ def write_article_from_html(
         tags=list(tags or []),
         item_id=item_id,
         visibility=visibility or "private",
-        status=status or "inbox",
+        status=status or "",
     )
     result = write_article(vault, item, on_duplicate=on_duplicate)
     result.images_downloaded = sum(1 for img in parsed.images if img.local_path and not img.error)
@@ -256,9 +254,9 @@ def write_article_from_url(
     on_duplicate: OnDuplicate = "update",
     client: httpx.Client | None = None,
     visibility: str = "private",
-    status: str = "inbox",
+    status: str = "",
 ) -> LibraryWriteResult:
-    """Fetch URL → parse → write Library/Articles note (public pages only)."""
+    """Fetch URL → parse → write Information note (public pages only)."""
     url = (url or "").strip()
     vault = ensure_library_scaffold(vault_path)
 
@@ -319,18 +317,18 @@ def save(
     tags: list[str] | None = None,
     source_type: LibraryType = "article",
     visibility: str = "private",
-    status: str = "inbox",
+    status: str = "",
     download_images: bool = True,
     on_duplicate: OnDuplicate = "update",
     client: httpx.Client | None = None,
 ) -> LibraryWriteResult:
-    """Unified Library save used by ``POST /api/library/save``.
+    """Unified Information save used by ``POST /api/library/save``.
 
     Priority: ``body_md`` → ``html`` (+ optional url as base) → ``url`` fetch.
     """
     if on_duplicate not in {"update", "skip", "new"}:
         raise ValueError("on_duplicate must be update, skip, or new")
-    if source_type not in FOLDER_BY_TYPE:
+    if source_type not in {"article", "email", "book"}:
         raise ValueError(f"Unsupported source_type: {source_type}")
 
     html_s = (html or "").strip() or None
@@ -348,7 +346,7 @@ def save(
             authors=list(authors or []),
             tags=list(tags or []),
             visibility=visibility or "private",
-            status=status or "inbox",
+            status=status or "",
         )
         return write_article(vault_path, item, on_duplicate=on_duplicate)
 
@@ -389,18 +387,21 @@ def find_by_source_url(
     *,
     source_type: LibraryType | None = "article",
 ) -> Path | None:
-    """Find an existing Library note whose frontmatter source_url matches."""
+    """Find an existing Information (or legacy Library) note by source_url."""
     vault = Path(vault_path).expanduser()
     target = _normalize_url(source_url)
     if not target:
         return None
 
-    folders: list[Path] = []
-    if source_type:
-        folders.append(vault / LIBRARY_ROOT / FOLDER_BY_TYPE[source_type])
-    else:
-        for name in FOLDER_BY_TYPE.values():
-            folders.append(vault / LIBRARY_ROOT / name)
+    folders: list[Path] = [
+        vault / INFORMATION_ROOT,
+        # Legacy PRODUCT paths (pre-migration)
+        vault / "Library" / "Articles",
+        vault / "Library" / "Emails",
+        vault / "Library" / "Books",
+    ]
+    # source_type kept for API compat; V1.1 is flat so we search all candidates
+    _ = source_type
 
     for folder in folders:
         if not folder.is_dir():
@@ -418,23 +419,28 @@ def find_by_source_url(
 
 
 def render_library_note(item: LibraryItem) -> str:
-    """Render PRODUCT_v1 §7.2 note markdown."""
+    """Render Constitution V1.1 minimal Information note markdown."""
     title = (item.title or "Untitled").strip() or "Untitled"
     captured = item.captured_at or _now_iso()
     authors = [a.strip() for a in item.authors if (a or "").strip()]
     tags = [t.strip() for t in item.tags if (t or "").strip()]
 
+    # Minimal machine-useful metadata — folder implies Information role
     meta: dict[str, Any] = {
         "id": item.item_id or new_id("lib"),
         "title": title,
-        "type": item.source_type,
         "source_url": item.canonical_url or "",
         "authors": authors,
         "captured_at": captured,
-        "tags": tags,
         "visibility": item.visibility or "private",
-        "status": item.status or "inbox",
     }
+    # Optional medium hint for publish pipelines (not a vault taxonomy)
+    if item.source_type and item.source_type != "article":
+        meta["source_kind"] = item.source_type
+    if tags:
+        meta["tags"] = tags
+    if item.status and item.status not in {"", "inbox"}:
+        meta["status"] = item.status
     if item.published_at:
         meta["published_at"] = item.published_at
     for key, value in (item.extra_frontmatter or {}).items():
@@ -553,7 +559,6 @@ def _normalize_url(url: str) -> str:
     if parsed.scheme not in {"http", "https"} or not parsed.netloc:
         return (url or "").strip().rstrip("/")
     path = parsed.path.rstrip("/") or ""
-    # Drop fragment; keep query (some CMS pages need it)
     return f"{parsed.scheme}://{parsed.netloc.lower()}{path}" + (
         f"?{parsed.query}" if parsed.query else ""
     )

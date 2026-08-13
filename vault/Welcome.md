@@ -1,18 +1,19 @@
 ---
 title: Welcome
 type: meta
-tags:
-  - meta
-updated: 2026-08-02
+updated: 2026-08-12
 ---
 
-# Think here
+# Personal Observatory
 
-Open **Reflections/** and write freely. No six-section skeleton required.
+Three cognitive folders — that is the whole daily map:
 
-When an idea settles, promote it into **Concepts/** or hang it on a **Projects/** hub. Papers and articles stay in the Knowledge Database — they are not vault files.
+- **Information/** — what entered from the world (articles, papers, books, observations)
+- **Thinking/** — what you noticed, questioned, or reflected (fragments are fine)
+- **Research/** — mature syntheses that emerge from connections
 
-Daily folders: `Reflections` · `Concepts` · `Projects`  
-(Archive / Reports / 90_Meta are plumbing — ignore until you need them.)
+Capture writes readable notes into Information. Talk through thoughts into Thinking. Accept meaningful links; let Research grow when synthesis is ready.
 
-Pipeline rules (for sync / promote, not for writing): [[Import Conventions]]
+Do not manage domain taxonomies, Inbox dumps, or Concepts/Projects forests.
+
+Pipeline rules (for sync / capture, not for writing): [[Import Conventions]]

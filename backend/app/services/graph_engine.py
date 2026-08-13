@@ -67,32 +67,56 @@ def _norm(value: float, ceiling: float) -> float:
 
 
 def classify_node(ko: KnowledgeObject) -> tuple[str, int] | None:
-    """Return (node_type, layer) or None if never shown (signal)."""
+    """Return (node_type, layer) or None if never shown.
+
+    Constitution V1.1: cognitive graph nodes are independent Information /
+    Thinking / Research objects. Digests, signals, and pure infrastructure
+    states are excluded. Legacy typed kinds remain as node_type labels for
+    debugging views; default views use cognitive allowlists.
+    """
     stage = (ko.lifecycle_stage or "").lower()
     role = (ko.workspace_role or "").lower()
     kind = (ko.kind or "").lower()
 
     if stage in NEVER_NODE_STAGES:
         return None
+    # Digests / reports are not cognitive graph nodes (V1.1)
+    if role == "report" or kind == "report":
+        return None
+    if role in {"research", "insight"} or stage == "insight" or kind == "insight":
+        return "research" if role == "research" else "insight", 5
     if stage == "concept" or role == "concept" or kind == "concept":
         return "concept", 1
-    if stage == "reflection" or role == "reflection" or kind == "reflection":
-        return "reflection", 2
-    if stage == "question" or kind == "question":
+    if (
+        stage == "reflection"
+        or role in {"reflection", "thinking"}
+        or kind in {"reflection", "thinking"}
+    ):
+        return "thinking" if role == "thinking" else "reflection", 2
+    if stage == "question" or kind == "question" or role == "question":
         return "question", 3
     if stage == "project" or role == "project" or kind == "project":
         return "project", 4
-    if stage == "insight" or kind == "insight":
-        return "insight", 5
-    if role == "book" or kind == "book":
-        return "book", 1  # treat as L1-adjacent; view-gated
-    if role == "report" or kind == "report":
-        return "report", 6
+    if role in {"information", "book"} or kind == "book":
+        return "information" if role == "information" else "book", 1
     if kind == "meeting" or role == "meeting":
-        return "meeting", 6
+        return None  # infrastructure / calendar — not cognitive
     if stage in RESOURCE_STAGES or role == "resource":
+        # Raw resources are not default cognitive nodes (view-gated only)
         return "resource", 6
     return "resource", 6
+
+
+def cognitive_role_for_node_type(node_type: str) -> str:
+    """Map graph node_type → V1.1 cognitive role."""
+    nt = (node_type or "").lower()
+    if nt in {"information", "book", "resource"}:
+        return "information"
+    if nt in {"research", "insight"}:
+        return "research"
+    if nt in {"thinking", "reflection", "concept", "project", "question"}:
+        return "thinking"
+    return "thinking"
 
 
 def map_edge_type(
@@ -153,19 +177,28 @@ def _sync_one(db: Session, notebook_id: str | None) -> dict[str, int]:
     kos = {ko.id: ko for ko in q.all()}
 
     node_rows: dict[str, GraphNode] = {}
+    exclude_labels = {
+        str(x).strip().lower()
+        for x in (cfg().get("exclude_infrastructure_labels") or [])
+        if str(x).strip()
+    }
     for ko in kos.values():
         classified = classify_node(ko)
         if not classified:
             continue
         node_type, layer = classified
+        label = (ko.title or "").strip()
+        if label.lower() in exclude_labels:
+            # Constitution V1.1 Rule 06 — folders/infra must not become cognitive nodes
+            continue
         status = ""
         if node_type == "question":
             qq = db.query(Question).filter(Question.id == ko.id).first()
             status = qq.status if qq else ""
-        elif node_type == "insight":
+        elif node_type in {"insight", "research"}:
             ins = db.query(Insight).filter(Insight.id == ko.id).first()
             status = ins.status if ins else ""
-        elif node_type == "reflection":
+        elif node_type in {"reflection", "thinking"}:
             ref = db.query(Reflection).filter(Reflection.id == ko.id).first()
             status = ref.status if ref else ""
 
@@ -174,7 +207,7 @@ def _sync_one(db: Session, notebook_id: str | None) -> dict[str, int]:
             notebook_id=ko.notebook_id,
             node_type=node_type,
             layer=layer,
-            label=ko.title or "Untitled",
+            label=label or "Untitled",
             maturity=ko.maturity or "",
             weight=0.0,
             degree=0,
@@ -921,7 +954,12 @@ def suggest_graph_links(
     notebook_id: str,
     use_llm: bool = False,
 ) -> list[dict[str, Any]]:
-    """Propose missing concept links from co-occurrence in reflections; propose-only."""
+    """Propose meaningful links between independent cognitive objects (propose-only).
+
+    Constitution V1.1 Rule 08/09: detect possible relationships, explain why they
+    may be meaningful, and create LifecycleProposal rows — never auto-write
+    edges or explode the graph. Human accept/reject required.
+    """
     reflections = (
         db.query(KnowledgeObject)
         .filter(
