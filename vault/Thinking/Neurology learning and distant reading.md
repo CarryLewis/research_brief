@@ -2,7 +2,7 @@
 source: notion
 source_id: "3bf400e8-b3ea-4885-b3df-11d59336368e"
 created: 2026-08-12
-updated: 2026-08-12
+updated: 2026-08-13
 ---
 
 # Neurology learning and distant reading
