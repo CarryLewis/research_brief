@@ -1,21 +1,24 @@
 #!/usr/bin/env bash
-# Pull Notion→GitHub Thinking notes, then mirror vault/Thinking into a local Obsidian vault.
+# Notion Thinking DB → local Obsidian vault (direct).
 #
-# Required (env or defaults below):
-#   RESEARCH_BRIEF_REPO  — clone of this GitHub repo
-#   OBSIDIAN_VAULT       — Obsidian vault root (the folder Obsidian opened)
+# This does NOT go through GitHub. It calls the Thinking sync CLI and writes
+# markdown into OBSIDIAN_VAULT/Thinking/.
+#
+# Required:
+#   OBSIDIAN_VAULT  — Obsidian vault root (Manage vaults path)
+#   NOTION_TOKEN + NOTION_THINKING_DATABASE_ID — via env or REPO/.env
 #
 # Optional:
-#   THINKING_SUBDIR      — destination under vault (default: Thinking)
-#   RSYNC_DELETE=1       — mirror exactly (default); set 0 to keep local-only files
-#   SYNC_LOG             — append log file (default: ~/Library/Logs/thinking-vault-sync.log on macOS)
+#   RESEARCH_BRIEF_REPO — clone of this repo (code + .env + local SQLite)
+#   PYTHON_BIN          — python interpreter (default: repo .venv or python3)
+#   SYNC_LOG            — log file path
 
 set -euo pipefail
 
 REPO="${RESEARCH_BRIEF_REPO:-$HOME/Documents/research_brief}"
-VAULT="${OBSIDIAN_VAULT:-$HOME/Library/Mobile Documents/iCloud~md~obsidian/Documents}"
-SUBDIR="${THINKING_SUBDIR:-Thinking}"
-RSYNC_DELETE="${RSYNC_DELETE:-1}"
+# Default matches vault named "Thinking valut" under Obsidian iCloud Documents.
+# If Manage vaults shows a different path, set OBSIDIAN_VAULT to that exact path.
+VAULT="${OBSIDIAN_VAULT:-$HOME/Library/Mobile Documents/iCloud~md~obsidian/Documents/Thinking valut}"
 
 if [[ "$(uname -s)" == "Darwin" ]]; then
   LOG="${SYNC_LOG:-$HOME/Library/Logs/thinking-vault-sync.log}"
@@ -26,47 +29,78 @@ fi
 mkdir -p "$(dirname "$LOG")"
 exec >>"$LOG" 2>&1
 
-echo "==== $(date -u +%Y-%m-%dT%H:%M:%SZ) thinking-vault local sync ===="
+echo "==== $(date -u +%Y-%m-%dT%H:%M:%SZ) Notion → Obsidian direct sync ===="
 
-if [[ ! -d "$REPO/.git" ]]; then
-  echo "ERROR: not a git repo: $REPO" >&2
-  echo "Clone first: git clone https://github.com/CarryLewis/research_brief.git \"$REPO\"" >&2
+# Avoid stale Clash/Surge proxy breaking unattended Notion API calls
+export http_proxy="" https_proxy="" HTTP_PROXY="" HTTPS_PROXY="" ALL_PROXY="" all_proxy=""
+
+if [[ ! -d "$REPO/backend/app" ]]; then
+  echo "ERROR: research_brief backend not found at: $REPO" >&2
+  echo "Clone: git clone https://github.com/CarryLewis/research_brief.git \"$REPO\"" >&2
   exit 1
 fi
 
 if [[ ! -d "$VAULT" ]]; then
   echo "ERROR: Obsidian vault not found: $VAULT" >&2
+  echo "Open Obsidian → Manage vaults and copy the exact path into OBSIDIAN_VAULT." >&2
   exit 1
 fi
 
-SRC="$REPO/vault/Thinking"
-DST="$VAULT/$SUBDIR"
+# Load secrets from repo .env (never commit this file)
+ENV_FILE="${THINKING_ENV_FILE:-$REPO/.env}"
+if [[ -f "$ENV_FILE" ]]; then
+  set -a
+  # shellcheck disable=SC1090
+  source "$ENV_FILE"
+  set +a
+  echo "loaded_env=$ENV_FILE"
+else
+  echo "WARN: no $ENV_FILE — relying on already-exported env vars"
+fi
 
-if [[ ! -d "$SRC" ]]; then
-  echo "ERROR: missing $SRC (pull the repo / wait for Actions sync)" >&2
+if [[ -z "${NOTION_TOKEN:-}" || -z "${NOTION_THINKING_DATABASE_ID:-}" ]]; then
+  echo "ERROR: NOTION_TOKEN and NOTION_THINKING_DATABASE_ID are required (put them in $ENV_FILE)" >&2
   exit 1
 fi
 
-echo "repo=$REPO"
+# Local SQLite sync index (keep off iCloud when possible)
+export DATA_DIR="${DATA_DIR:-$REPO/data}"
+mkdir -p "$DATA_DIR"
+export DEFAULT_VAULT_PATH="$VAULT"
+export PYTHONPATH="$REPO/backend${PYTHONPATH:+:$PYTHONPATH}"
+
+PYTHON_BIN="${PYTHON_BIN:-}"
+if [[ -z "$PYTHON_BIN" ]]; then
+  if [[ -x "$REPO/.venv/bin/python" ]]; then
+    PYTHON_BIN="$REPO/.venv/bin/python"
+  elif command -v python3 >/dev/null 2>&1; then
+    PYTHON_BIN="$(command -v python3)"
+  else
+    echo "ERROR: python3 not found" >&2
+    exit 1
+  fi
+fi
+
+# Ensure deps once (idempotent)
+REQ="$REPO/backend/requirements.txt"
+MARKER="$REPO/.venv/.thinking-sync-deps-ok"
+if [[ ! -x "$REPO/.venv/bin/python" ]]; then
+  echo "Creating venv at $REPO/.venv"
+  "$PYTHON_BIN" -m venv "$REPO/.venv"
+  PYTHON_BIN="$REPO/.venv/bin/python"
+fi
+if [[ ! -f "$MARKER" || "$REQ" -nt "$MARKER" ]]; then
+  echo "Installing Python deps into .venv"
+  "$REPO/.venv/bin/pip" install -q -r "$REQ"
+  touch "$MARKER"
+  PYTHON_BIN="$REPO/.venv/bin/python"
+fi
+
 echo "vault=$VAULT"
-echo "src=$SRC -> dst=$DST"
+echo "python=$PYTHON_BIN"
+echo "data_dir=$DATA_DIR"
 
-cd "$REPO"
-# Avoid stale Clash/Surge proxy (127.0.0.1:7890) breaking unattended runs
-export http_proxy="" https_proxy="" HTTP_PROXY="" HTTPS_PROXY="" ALL_PROXY="" all_proxy=""
-git -c http.proxy= -c https.proxy= fetch origin main
-git -c http.proxy= -c https.proxy= pull --ff-only origin main
+"$PYTHON_BIN" -m app.cli.thinking_sync --vault "$VAULT"
 
-mkdir -p "$DST"
-RSYNC_ARGS=(-a)
-if [[ "$RSYNC_DELETE" == "1" ]]; then
-  RSYNC_ARGS+=(--delete)
-fi
-# Keep Obsidian / Finder junk out of the mirror source side; destination may still have them.
-rsync "${RSYNC_ARGS[@]}" \
-  --exclude '.DS_Store' \
-  --exclude '.obsidian' \
-  "$SRC/" "$DST/"
-
-echo "OK: synced Thinking -> $DST"
+echo "OK: Notion synced into $VAULT/Thinking"
 echo
