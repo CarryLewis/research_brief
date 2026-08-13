@@ -58,17 +58,11 @@ tail -50 ~/Library/Logs/thinking-vault-sync.log
 
 Open Obsidian → `Thinking/`.
 
-### 5. Auto every 15 minutes
+### 5. Auto schedule (pick one)
 
-```bash
-mkdir -p ~/Library/LaunchAgents
-cp ~/Documents/research_brief/scripts/macos/com.carrylewis.thinking-vault-sync.plist.example \
-   ~/Library/LaunchAgents/com.carrylewis.thinking-vault-sync.plist
-
-launchctl bootout gui/$(id -u)/com.carrylewis.thinking-vault-sync 2>/dev/null || true
-launchctl bootstrap gui/$(id -u) ~/Library/LaunchAgents/com.carrylewis.thinking-vault-sync.plist
-launchctl kickstart -k gui/$(id -u)/com.carrylewis.thinking-vault-sync
-```
+- **每天 06:00（推荐）**：见 [`MAC_SHORTCUTS_DAILY_SYNC.md`](./MAC_SHORTCUTS_DAILY_SYNC.md)  
+  （Apple 快捷指令，或 `com.carrylewis.thinking-vault-sync-daily` LaunchAgent）
+- **每 15 分钟（旧）**：`scripts/macos/com.carrylewis.thinking-vault-sync.plist.example` — 一般不再需要
 
 ## Notes
 

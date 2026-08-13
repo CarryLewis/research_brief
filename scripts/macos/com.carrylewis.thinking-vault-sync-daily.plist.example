@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!--
+  macOS LaunchAgent — Notion → iCloud Obsidian once daily at 06:00 local time.
+
+  Replaces the old every-15-minutes agent. Safe to use instead of (or alongside)
+  Apple Shortcuts; LaunchAgent is usually more reliable for shell sync.
+
+  Install:
+    # remove old 15-minute agent if still present
+    launchctl bootout gui/$(id -u)/com.carrylewis.thinking-vault-sync 2>/dev/null || true
+    rm -f ~/Library/LaunchAgents/com.carrylewis.thinking-vault-sync.plist
+
+    chmod +x ~/Documents/research_brief/scripts/sync-to-local-obsidian.sh
+    mkdir -p ~/Library/LaunchAgents
+    cp ~/Documents/research_brief/scripts/macos/com.carrylewis.thinking-vault-sync-daily.plist.example \
+       ~/Library/LaunchAgents/com.carrylewis.thinking-vault-sync-daily.plist
+
+    launchctl bootout gui/$(id -u)/com.carrylewis.thinking-vault-sync-daily 2>/dev/null || true
+    launchctl bootstrap gui/$(id -u) ~/Library/LaunchAgents/com.carrylewis.thinking-vault-sync-daily.plist
+
+  Uninstall:
+    launchctl bootout gui/$(id -u)/com.carrylewis.thinking-vault-sync-daily 2>/dev/null || true
+    rm -f ~/Library/LaunchAgents/com.carrylewis.thinking-vault-sync-daily.plist
+
+  Logs: ~/Library/Logs/thinking-vault-sync.log
+  Note: if Mac is asleep at 06:00, the job runs after wake (Power Nap / next wake).
+-->
+<plist version="1.0">
+<dict>
+  <key>Label</key>
+  <string>com.carrylewis.thinking-vault-sync-daily</string>
+
+  <key>ProgramArguments</key>
+  <array>
+    <string>/bin/bash</string>
+    <string>/Users/carrylewis/Documents/research_brief/scripts/sync-to-local-obsidian.sh</string>
+  </array>
+
+  <key>EnvironmentVariables</key>
+  <dict>
+    <key>RESEARCH_BRIEF_REPO</key>
+    <string>/Users/carrylewis/Documents/research_brief</string>
+    <key>OBSIDIAN_VAULT</key>
+    <string>/Users/carrylewis/Library/Mobile Documents/iCloud~md~obsidian/Documents</string>
+    <key>THINKING_PROXY_HOST</key>
+    <string>127.0.0.1</string>
+    <key>THINKING_PROXY_PORT</key>
+    <string>7890</string>
+    <key>PATH</key>
+    <string>/usr/local/bin:/opt/homebrew/bin:/usr/bin:/bin:/usr/sbin:/sbin</string>
+  </dict>
+
+  <key>StartCalendarInterval</key>
+  <dict>
+    <key>Hour</key>
+    <integer>6</integer>
+    <key>Minute</key>
+    <integer>0</integer>
+  </dict>
+
+  <key>StandardOutPath</key>
+  <string>/Users/carrylewis/Library/Logs/thinking-vault-sync.daily.out.log</string>
+  <key>StandardErrorPath</key>
+  <string>/Users/carrylewis/Library/Logs/thinking-vault-sync.daily.err.log</string>
+</dict>
+</plist>
