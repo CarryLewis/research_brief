@@ -13,7 +13,7 @@ updated: 2026-08-13
 
 ## Context
 
-[[Syncope clinical reasoning]]; [[ST elevation mimic]]; [[Emergency risk screening]]
+[[Ambiguous clinical signals]]; [[Clinical risk sensemaking]]; [[Observation before diagnosis]]
 
 ## Observation
 

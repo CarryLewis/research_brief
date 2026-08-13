@@ -13,7 +13,7 @@ updated: 2026-08-13
 
 ## Context
 
-[[Thinking Vault system]]; [[Reading as trigger]]; [[Obsidian vault]]
+[[Distant knowledge]]; [[Reading as trigger]]; [[Thinking system as processing layer]]
 
 ## Observation
 

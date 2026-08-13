@@ -13,7 +13,7 @@ updated: 2026-08-13
 
 ## Context
 
-[[Neurology night shift]]
+[[Ambiguous clinical signals]]; [[Patient language]]; [[Observation before diagnosis]]
 
 ## Observation
 

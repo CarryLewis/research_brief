@@ -13,7 +13,7 @@ updated: 2026-08-13
 
 ## Context
 
-[[Neurology learning]]; [[Distant reading]]; [[Knowledge distance]]
+[[Distant knowledge]]; [[Sensemaking across distance]]; [[Learning as reconstruction]]
 
 ## Observation
 
