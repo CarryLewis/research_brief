@@ -8,6 +8,7 @@ Goal: every capture follows the Thinking Vault contract:
 Related:
 - Database setup: [NOTION_AI_CREATE_THINKING_DATABASE_PROMPT.md](NOTION_AI_CREATE_THINKING_DATABASE_PROMPT.md)
 - Checklist: [NOTION_THINKING_DATABASE_CHECKLIST.md](NOTION_THINKING_DATABASE_CHECKLIST.md)
+- Page Types addendum: [NOTION_AI_PAGE_TYPES_PROMPT.md](NOTION_AI_PAGE_TYPES_PROMPT.md)
 
 ---
 
