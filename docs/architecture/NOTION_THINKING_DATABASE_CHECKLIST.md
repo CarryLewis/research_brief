@@ -64,6 +64,22 @@ vault/Thinking/{Name}.md  (committed by Actions when changed)
 
 GitHub setup: add repository secrets `NOTION_TOKEN` + `NOTION_THINKING_DATABASE_ID`, then enable [`.github/workflows/thinking-sync.yml`](../../.github/workflows/thinking-sync.yml).
 
+### Local Obsidian (iCloud / existing vault) auto-update
+
+GitHub Actions only update the **repo** `vault/`. Your Mac Obsidian vault (e.g. iCloud `Thinking valut`) needs a second hop:
+
+```text
+GitHub main/vault/Thinking  →  git pull + rsync  →  Obsidian vault/Thinking
+```
+
+1. Clone once: `git clone https://github.com/CarryLewis/research_brief.git ~/Documents/research_brief`
+2. Manual sync: [`scripts/sync-to-local-obsidian.sh`](../../scripts/sync-to-local-obsidian.sh)  
+   Set `OBSIDIAN_VAULT` to the path shown in Obsidian → Manage vaults.
+3. Auto every 15 min (macOS): copy [`scripts/macos/com.carrylewis.thinking-vault-sync.plist.example`](../../scripts/macos/com.carrylewis.thinking-vault-sync.plist.example) to `~/Library/LaunchAgents/` and `launchctl load` it (instructions inside the file).
+4. Logs: `~/Library/Logs/thinking-vault-sync.log`
+
+Do **not** `git init` inside the iCloud Obsidian folder; keep the git clone separate and rsync `Thinking/` only.
+
 - Empty properties → section omitted
 - `Related Information` → `## Connections` with `[[Target Name]]` (ordinary notes)
 - `Status=folder` → create `Thinking/{Name}/`; move Related members into that directory; **no** `.md` index note; folder props/body stay Notion-only

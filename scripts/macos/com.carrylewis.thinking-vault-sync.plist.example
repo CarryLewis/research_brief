@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!--
+  macOS LaunchAgent — auto pull GitHub Thinking notes into your Obsidian vault.
+
+  Setup (once):
+    1. Clone repo to ~/Documents/research_brief (or edit RESEARCH_BRIEF_REPO below)
+    2. Confirm OBSIDIAN_VAULT matches the path shown in Obsidian → Manage vaults
+    3. Copy this file:
+         mkdir -p ~/Library/LaunchAgents
+         cp scripts/macos/com.carrylewis.thinking-vault-sync.plist.example \
+            ~/Library/LaunchAgents/com.carrylewis.thinking-vault-sync.plist
+    4. Edit the copied plist paths if needed
+    5. chmod +x ~/Documents/research_brief/scripts/sync-to-local-obsidian.sh
+    6. load:
+         launchctl unload ~/Library/LaunchAgents/com.carrylewis.thinking-vault-sync.plist 2>/dev/null || true
+         launchctl load ~/Library/LaunchAgents/com.carrylewis.thinking-vault-sync.plist
+         launchctl start com.carrylewis.thinking-vault-sync
+
+  Logs: ~/Library/Logs/thinking-vault-sync.log
+  Interval below: 900 seconds (15 minutes). Change StartInterval as desired.
+-->
+<plist version="1.0">
+<dict>
+  <key>Label</key>
+  <string>com.carrylewis.thinking-vault-sync</string>
+
+  <key>ProgramArguments</key>
+  <array>
+    <string>/bin/bash</string>
+    <string>/Users/carrylewis/Documents/research_brief/scripts/sync-to-local-obsidian.sh</string>
+  </array>
+
+  <key>EnvironmentVariables</key>
+  <dict>
+    <key>RESEARCH_BRIEF_REPO</key>
+    <string>/Users/carrylewis/Documents/research_brief</string>
+    <!-- Obsidian vault root from Manage vaults (adjust if your vault is a subfolder) -->
+    <key>OBSIDIAN_VAULT</key>
+    <string>/Users/carrylewis/Library/Mobile Documents/iCloud~md~obsidian/Documents</string>
+    <key>RSYNC_DELETE</key>
+    <string>1</string>
+    <!-- Clear proxy so LaunchAgent is not stuck on 127.0.0.1:7890 when Clash is off -->
+    <key>http_proxy</key>
+    <string></string>
+    <key>https_proxy</key>
+    <string></string>
+    <key>HTTP_PROXY</key>
+    <string></string>
+    <key>HTTPS_PROXY</key>
+    <string></string>
+    <key>ALL_PROXY</key>
+    <string></string>
+    <key>all_proxy</key>
+    <string></string>
+  </dict>
+
+  <key>RunAtLoad</key>
+  <true/>
+
+  <key>StartInterval</key>
+  <integer>900</integer>
+
+  <key>StandardOutPath</key>
+  <string>/Users/carrylewis/Library/Logs/thinking-vault-sync.launchd.out.log</string>
+  <key>StandardErrorPath</key>
+  <string>/Users/carrylewis/Library/Logs/thinking-vault-sync.launchd.err.log</string>
+</dict>
+</plist>
