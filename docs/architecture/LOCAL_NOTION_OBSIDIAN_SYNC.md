@@ -75,5 +75,6 @@ launchctl kickstart -k gui/$(id -u)/com.carrylewis.thinking-vault-sync
 - Sync **overwrites** Notion-linked notes under `Thinking/` by `source_id`.
 - SQLite index: `~/Documents/research_brief/data/` (kept off iCloud).
 - Do not `git init` inside the iCloud Obsidian folder.
-- If API fails with `127.0.0.1:7890`, clear proxy / start Clash (script clears common proxy env vars).
+- SSL errors like `UNEXPECTED_EOF_WHILE_READING` usually mean the network path to Notion is broken.
+  **Fix:** open Clash/Surge (port 7890) *or* ensure direct HTTPS works; the sync script auto-uses 7890 when that port is listening.
 - Rotate the Notion integration secret if it was pasted into chat.

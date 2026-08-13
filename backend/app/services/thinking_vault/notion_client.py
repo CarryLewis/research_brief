@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import logging
+import time
 from typing import Any, Iterator
 
 import httpx
@@ -11,6 +12,8 @@ logger = logging.getLogger(__name__)
 
 NOTION_VERSION = "2022-06-28"
 NOTION_API_BASE = "https://api.notion.com/v1"
+_NETWORK_RETRIES = 3
+_NETWORK_RETRY_DELAY_SEC = 1.5
 
 
 class NotionAPIError(RuntimeError):
@@ -54,11 +57,28 @@ class NotionClient:
         self.close()
 
     def _request(self, method: str, path: str, **kwargs: Any) -> dict[str, Any]:
-        try:
-            resp = self._client.request(method, path, **kwargs)
-        except httpx.HTTPError as exc:
-            logger.error("Notion request failed: %s %s — %s", method, path, exc)
-            raise NotionAPIError(f"Notion network failure: {exc}") from exc
+        last_exc: Exception | None = None
+        resp: httpx.Response | None = None
+        for attempt in range(1, _NETWORK_RETRIES + 1):
+            try:
+                resp = self._client.request(method, path, **kwargs)
+                last_exc = None
+                break
+            except httpx.HTTPError as exc:
+                last_exc = exc
+                logger.warning(
+                    "Notion request failed (%s/%s): %s %s — %s",
+                    attempt,
+                    _NETWORK_RETRIES,
+                    method,
+                    path,
+                    exc,
+                )
+                if attempt < _NETWORK_RETRIES:
+                    time.sleep(_NETWORK_RETRY_DELAY_SEC * attempt)
+        if last_exc is not None or resp is None:
+            logger.error("Notion request failed: %s %s — %s", method, path, last_exc)
+            raise NotionAPIError(f"Notion network failure: {last_exc}") from last_exc
         if resp.status_code >= 400:
             try:
                 body = resp.json()

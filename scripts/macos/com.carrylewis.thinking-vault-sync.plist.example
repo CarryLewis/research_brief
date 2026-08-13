@@ -40,18 +40,11 @@
     <!-- Exact path from Obsidian → Manage vaults for "Thinking valut" -->
     <key>OBSIDIAN_VAULT</key>
     <string>/Users/carrylewis/Library/Mobile Documents/iCloud~md~obsidian/Documents</string>
-    <key>http_proxy</key>
-    <string></string>
-    <key>https_proxy</key>
-    <string></string>
-    <key>HTTP_PROXY</key>
-    <string></string>
-    <key>HTTPS_PROXY</key>
-    <string></string>
-    <key>ALL_PROXY</key>
-    <string></string>
-    <key>all_proxy</key>
-    <string></string>
+    <!-- Proxy is auto-detected by the script (Clash 7890 if listening). -->
+    <key>THINKING_PROXY_HOST</key>
+    <string>127.0.0.1</string>
+    <key>THINKING_PROXY_PORT</key>
+    <string>7890</string>
     <key>PATH</key>
     <string>/usr/local/bin:/opt/homebrew/bin:/usr/bin:/bin:/usr/sbin:/sbin</string>
   </dict>

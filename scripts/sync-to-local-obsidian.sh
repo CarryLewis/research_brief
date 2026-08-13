@@ -31,8 +31,26 @@ exec >>"$LOG" 2>&1
 
 echo "==== $(date -u +%Y-%m-%dT%H:%M:%SZ) Notion → Obsidian direct sync ===="
 
-# Avoid stale Clash/Surge proxy breaking unattended Notion API calls
-export http_proxy="" https_proxy="" HTTP_PROXY="" HTTPS_PROXY="" ALL_PROXY="" all_proxy=""
+# Proxy policy:
+# - If Clash/Surge local port is open, USE it (needed to reach Notion in many networks).
+# - If not open, clear proxy env so a stale 127.0.0.1:7890 does not break SSL.
+_proxy_host="${THINKING_PROXY_HOST:-127.0.0.1}"
+_proxy_port="${THINKING_PROXY_PORT:-7890}"
+_proxy_url=""
+if command -v nc >/dev/null 2>&1 && nc -z -G 1 "$_proxy_host" "$_proxy_port" >/dev/null 2>&1; then
+  _proxy_url="http://${_proxy_host}:${_proxy_port}"
+elif command -v nc >/dev/null 2>&1 && nc -z -w 1 "$_proxy_host" "$_proxy_port" >/dev/null 2>&1; then
+  _proxy_url="http://${_proxy_host}:${_proxy_port}"
+fi
+if [[ -n "$_proxy_url" ]]; then
+  export http_proxy="$_proxy_url" https_proxy="$_proxy_url"
+  export HTTP_PROXY="$_proxy_url" HTTPS_PROXY="$_proxy_url"
+  export ALL_PROXY="$_proxy_url" all_proxy="$_proxy_url"
+  echo "proxy=$_proxy_url (local agent detected)"
+else
+  export http_proxy="" https_proxy="" HTTP_PROXY="" HTTPS_PROXY="" ALL_PROXY="" all_proxy=""
+  echo "proxy=(none) — no listener on ${_proxy_host}:${_proxy_port}"
+fi
 
 if [[ ! -d "$REPO/backend/app" ]]; then
   echo "ERROR: research_brief backend not found at: $REPO" >&2
@@ -100,7 +118,22 @@ echo "vault=$VAULT"
 echo "python=$PYTHON_BIN"
 echo "data_dir=$DATA_DIR"
 
+set +e
 "$PYTHON_BIN" -m app.cli.thinking_sync --vault "$VAULT"
+sync_rc=$?
+set -e
+
+if [[ "$sync_rc" -ne 0 ]]; then
+  echo "ERROR: thinking_sync exited with code $sync_rc"
+  # One retry after short wait (transient SSL / proxy flaps)
+  sleep 2
+  if [[ -n "$_proxy_url" ]]; then
+    echo "retry with proxy=$_proxy_url"
+  else
+    echo "retry without proxy"
+  fi
+  "$PYTHON_BIN" -m app.cli.thinking_sync --vault "$VAULT"
+fi
 
 echo "OK: Notion synced into $VAULT/Thinking"
 echo
