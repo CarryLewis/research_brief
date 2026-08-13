@@ -1,99 +1,57 @@
-# Research Brief Studio — Personal Observatory
+# Thinking Vault
 
-**Thinking Vault (priority):** [`docs/architecture/THINKING_VAULT_ARCHITECTURE.md`](docs/architecture/THINKING_VAULT_ARCHITECTURE.md) — Notion property columns → `Thinking/*.md` one-way sync.
-
-**Obsidian-facing architecture:** [`docs/architecture/OBSIDIAN_CONSTITUTION_V1_1.md`](docs/architecture/OBSIDIAN_CONSTITUTION_V1_1.md)  
-**System architecture (Lake / KO / Lifecycle / Graph Engine):** [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md)  
-**Product Capture · Annotate · Publish:** [`docs/PRODUCT_v1.md`](docs/PRODUCT_v1.md)
-
-Layers:
-
-1. **Content Lake** — immutable originals (`DATA_DIR/content_lake`) — backend only
-2. **Knowledge Database** — SQLite Knowledge Objects, edges, proposals
-3. **Graph Engine** — cognitive projection (JSON API; propose links; no infrastructure nodes)
-4. **Cognitive Vault (Obsidian)** — `Information/` · `Thinking/` · `Research/`
+Notion Thinking Database → Obsidian `vault/Thinking/` one-way sync. Runtime is **GitHub Actions**, not a local API.
 
 ```text
-Observe → Capture → Information
-Experience → Conversation → Thinking
-Connections accumulate → Research Brief (synthesis)
+Notion property columns + page body
+        ↓
+GitHub Actions (every 6 hours, or Run workflow)
+        ↓
+vault/Thinking/*.md   +   state/thinking_sync.db
+        ↓
+git commit / push
+        ↓
+Local Obsidian: git pull, open vault/
 ```
 
-## Thinking Vault on GitHub (scheduled sync)
+## Setup (once)
 
-Primary runtime for Notion → vault sync is **GitHub Actions** (hourly + manual).
+1. Create the Notion database using [`docs/architecture/NOTION_THINKING_DATABASE_CHECKLIST.md`](docs/architecture/NOTION_THINKING_DATABASE_CHECKLIST.md).
+2. In the repo: **Settings → Secrets and variables → Actions**, add:
+   - `NOTION_TOKEN` — Notion Internal Integration secret
+   - `NOTION_THINKING_DATABASE_ID` — database id from the Notion URL
+3. Actions → **Thinking Vault Sync** → **Run workflow** (or wait for the 6-hour schedule).
 
-1. Repo Settings → Secrets and variables → Actions → add:
-   - `NOTION_TOKEN`
-   - `NOTION_THINKING_DATABASE_ID`
-2. Workflow: [`.github/workflows/thinking-sync.yml`](.github/workflows/thinking-sync.yml)
-3. Writes into the repo’s [`vault/`](vault/) and commits when notes change.
-4. Actions → **Thinking Vault Sync** → Run workflow (optional manual trigger).
+Workflow: [`.github/workflows/thinking-sync.yml`](.github/workflows/thinking-sync.yml)
 
-SQLite sync index is cached across runs; if the cache is cold, sync hydrates identity from on-disk `source_id` / `.thinking-folder` sidecars.
+## Vault layout
 
-Local CLI remains available for debugging.
+```text
+vault/
+  .obsidian/             # open this folder as an Obsidian vault
+  Thinking/              # synced notes (identity = frontmatter source_id)
+  Archive/Thinking/      # soft-archive when a Notion page disappears
+state/
+  thinking_sync.db       # sync index (committed so Actions remember renames)
+```
 
-## Public website (Quartz + Cloudflare)
+On your machine: `git pull`, then Open folder as vault → `vault/`.
 
-Publish the Obsidian-style garden from `vault/` with Quartz:
+## Local debug (optional)
 
-- Code: [`site/`](site/)
-- Guide: [`docs/architecture/QUARTZ_CLOUDFLARE_DEPLOY.md`](docs/architecture/QUARTZ_CLOUDFLARE_DEPLOY.md)
-- Connect the repo to **Cloudflare Pages** (root directory `site`, build `npm ci && npm run build`, output `public`), then bind your existing domain.
-
-AI proposes relationships; humans accept meaningful links. No Inbox dump. No domain folder taxonomy.
-
-## Quick start
+The CLI is only for debugging. Daily use is Actions.
 
 ```bash
-cd backend && source .venv/bin/activate
-
-# Thinking Vault: Notion → vault/Thinking/ (local debug)
-# (requires NOTION_TOKEN + NOTION_THINKING_DATABASE_ID; see docs/architecture/NOTION_THINKING_DATABASE_CHECKLIST.md)
+cd backend
+python -m venv .venv && source .venv/bin/activate
+pip install -r requirements.txt
+cp ../.env.example ../.env   # fill NOTION_TOKEN + NOTION_THINKING_DATABASE_ID
 python -m app.cli.thinking_sync --vault ../vault
 python -m app.cli.thinking_sync --status
-
-# Capture → Lake + KO; Library/save writes Information/ notes
-python -m app.cli.collect --job ../jobs/nature_migraine.yaml --no-media
-
-# Lifecycle (backend; not daily vault bureaucracy)
-python -m app.cli.lifecycle backfill
-python -m app.cli.lifecycle evaluate --notebook nb_xxx
-python -m app.cli.lifecycle proposals
-
-# Workspace sync → Thinking / Research cognitive folders
-python -m app.cli.workspace sync --notebook nb_xxx --vault ../vault
-
-# Cognitive graph (portable JSON — propose-only AI links)
-python -m app.cli.graph sync --notebook nb_xxx
-python -m app.cli.graph view --view research --notebook nb_xxx --fresh
-python -m app.cli.graph neighborhood --ko ko_xxx --depth 2
-python -m app.cli.graph metrics --notebook nb_xxx
-python -m app.cli.graph suggest-links --notebook nb_xxx
-
-# API
-uvicorn app.main:app --app-dir backend --reload --port 8000
 ```
 
-### Vault layout (Constitution V1.1)
+Tests: `cd backend && pytest -q`
 
-```text
-Information/            # world memory (readable captures)
-Thinking/               # Notion-synced + personal fragments
-Research/               # synthesis / briefs
-Archive/                # cold legacy + Digests
-90_Meta/
-```
+## Architecture
 
-## Config
-
-| File | Role |
-|------|------|
-| [`backend/configs/workspace.yaml`](backend/configs/workspace.yaml) | Cognitive folders, roles, Thinking Vault property map |
-| [`backend/configs/lifecycle.yaml`](backend/configs/lifecycle.yaml) | Stages, scoring, signal connectors, AI flags |
-| [`backend/configs/graph.yaml`](backend/configs/graph.yaml) | Graph views, weight formula, auto-sync |
-| [`backend/configs/channels.yaml`](backend/configs/channels.yaml) | Connectors |
-| [`.env.example`](.env.example) | `DEFAULT_VAULT_PATH`, Notion tokens, LLM, inbound, digest |
-
-Details: **[docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)** · **[docs/architecture/THINKING_VAULT_ARCHITECTURE.md](docs/architecture/THINKING_VAULT_ARCHITECTURE.md)**.
+Canonical contract: [`docs/architecture/THINKING_VAULT_ARCHITECTURE.md`](docs/architecture/THINKING_VAULT_ARCHITECTURE.md)

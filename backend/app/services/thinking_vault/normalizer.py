@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from ..knowledge import normalize_filter_tags
+from ...utils import sanitize_filename
 from .model import ThinkingConnection, ThinkingObject
 
 
@@ -21,6 +21,81 @@ DEFAULT_PROPERTY_NAMES: dict[str, str] = {
     "related_information": "Related Information",
     "tags": "Tags",
 }
+
+_MAX_FILTER_TAGS = 5
+_TYPE_TAG_REJECT = frozenset(
+    {
+        "article",
+        "paper",
+        "book",
+        "news",
+        "newsletter",
+        "podcast",
+        "video",
+        "image",
+        "audio",
+        "meeting",
+        "reflection",
+        "project",
+        "report",
+        "concept",
+        "information",
+        "thinking",
+        "research",
+        "resource",
+        "workspace",
+        "pipeline",
+        "database",
+        "inbox",
+        "archived",
+        "insight",
+        "raw-text",
+        "raw-index",
+        "analysis",
+        "source",
+        "captured",
+        "ready",
+        "partial",
+        "failed",
+    }
+)
+
+
+def _normalize_tag_token(raw: str) -> str:
+    token = (raw or "").strip().lower()
+    if not token:
+        return ""
+    for prefix in ("type/", "source/", "topic/", "status/", "tag/", "#"):
+        if token.startswith(prefix):
+            token = token[len(prefix) :]
+    token = sanitize_filename(token).lower().replace("_", "-")
+    token = token.strip("-")
+    if not token or token in {"raw-text", "raw-index", "analysis", "source", "captured"}:
+        return ""
+    return token[:40]
+
+
+def normalize_filter_tags(
+    analysis_tags: list[str] | None = None,
+    *,
+    max_tags: int = _MAX_FILTER_TAGS,
+) -> list[str]:
+    """Light tags for notes — reject type/pipeline tokens; cap length."""
+    seen: set[str] = set()
+    ordered: list[str] = []
+    for raw in analysis_tags or []:
+        tag = _normalize_tag_token(raw)
+        if tag and tag not in seen:
+            ordered.append(tag)
+            seen.add(tag)
+    out: list[str] = []
+    for tag in ordered:
+        if tag in _TYPE_TAG_REJECT or "/" in tag:
+            continue
+        out.append(tag)
+        if len(out) >= max_tags:
+            break
+    return out
 
 
 def property_names(cfg: dict[str, Any] | None = None) -> dict[str, str]:

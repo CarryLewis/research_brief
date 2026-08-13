@@ -3,7 +3,7 @@
 Copy everything inside the box below into Notion AI (on a blank page or workspace).  
 Goal: create the Thinking Database that Thinking Vault V1 syncs from.
 
-Property **display names** must match exactly (English), unless you later change `thinking_vault.property_names` in the backend config.
+Property **display names** must match exactly (English), unless you later change `DEFAULT_PROPERTY_NAMES` in the backend normalizer.
 
 ---
 

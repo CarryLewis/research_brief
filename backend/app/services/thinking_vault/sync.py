@@ -15,7 +15,7 @@ from typing import Any
 from sqlalchemy.orm import Session
 
 from ...db import ThinkingSyncState, utcnow
-from ...utils import content_hash, workspace_config_dict
+from ...utils import content_hash
 from .adapter import NotionThinkingAdapter
 from .model import ThinkingObject
 from .notion_client import NotionAPIError, NotionClient
@@ -29,7 +29,6 @@ from .writer import (
     notes_root,
     read_folder_sidecar,
     read_note_source_id,
-    thinking_vault_cfg,
     write_thinking_folder,
     write_thinking_note,
 )
@@ -276,7 +275,7 @@ def hydrate_sync_state_from_vault(
     still work across workflow runs when the DB cache is cold.
     """
     vault = Path(vault_path).expanduser()
-    cfg = cfg or workspace_config_dict()
+    cfg = cfg or {}
     archive = archive_root(vault, cfg)
     seeded = 0
 
@@ -340,7 +339,7 @@ def apply_thinking_objects(
     cfg: dict | None = None,
 ) -> SyncResult:
     """Write Thinking objects to the vault and update sync state."""
-    cfg = cfg or workspace_config_dict()
+    cfg = cfg or {}
     result = SyncResult()
     vault = Path(vault_path).expanduser()
     notes_base = notes_root(vault, cfg)
@@ -523,11 +522,7 @@ def sync_from_notion(
     soft_archive_missing: bool = True,
 ) -> SyncResult:
     """Full Notion → Obsidian Thinking sync."""
-    cfg = workspace_config_dict()
-    tv = thinking_vault_cfg(cfg)
-    property_cfg = {
-        "property_names": tv.get("property_names") or {},
-    }
+    property_cfg: dict[str, Any] = {}
     owns = client is None
     notion = client or NotionClient(token)
     try:
@@ -553,7 +548,6 @@ def sync_from_notion(
             objects,
             vault_path=vault_path,
             soft_archive_missing=soft_archive_missing,
-            cfg=cfg,
         )
     except NotionAPIError as exc:
         logger.error("Thinking sync Notion failure: %s", exc)
