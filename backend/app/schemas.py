@@ -552,3 +552,33 @@ class LibrarySaveResult(BaseModel):
     images_downloaded: int = 0
     image_errors: list[str] = Field(default_factory=list)
     vault_path: str = ""
+
+
+class ThinkingSyncRequest(BaseModel):
+    vault_path: str | None = None
+    soft_archive_missing: bool = True
+
+
+class ThinkingSyncItemOut(BaseModel):
+    source_id: str
+    title: str = ""
+    vault_path: str = ""
+    action: str = ""
+
+
+class ThinkingSyncResult(BaseModel):
+    ok: bool = True
+    created: int = 0
+    updated: int = 0
+    renamed: int = 0
+    unchanged: int = 0
+    archived: int = 0
+    errors: list[str] = Field(default_factory=list)
+    items: list[ThinkingSyncItemOut] = Field(default_factory=list)
+
+
+class ThinkingSyncStatusOut(BaseModel):
+    active: int = 0
+    archived: int = 0
+    total: int = 0
+    last_synced_at: str | None = None

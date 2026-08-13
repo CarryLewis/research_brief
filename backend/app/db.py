@@ -526,6 +526,25 @@ class GraphSyncRun(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow, index=True)
 
 
+class ThinkingSyncState(Base):
+    """Notion Thinking page → Obsidian file sync index (source_id is identity)."""
+
+    __tablename__ = "thinking_sync_state"
+
+    source_id: Mapped[str] = mapped_column(String(64), primary_key=True)
+    title: Mapped[str] = mapped_column(String(1024), nullable=False, default="")
+    vault_path: Mapped[str] = mapped_column(String(1024), nullable=False, default="")
+    content_hash: Mapped[str] = mapped_column(String(128), nullable=False, default="")
+    notion_last_edited: Mapped[str] = mapped_column(String(64), nullable=False, default="")
+    # active | archived
+    status: Mapped[str] = mapped_column(String(32), nullable=False, default="active", index=True)
+    last_synced_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=utcnow, onupdate=utcnow
+    )
+
+
 _settings = get_settings()
 engine = create_engine(
     f"sqlite:///{_settings.db_path}",

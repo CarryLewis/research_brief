@@ -1,6 +1,8 @@
 # Research Brief Studio — Knowledge OS
 
-Canonical architecture (all plan versions merged): **[docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)**
+**Thinking Vault (priority):** [`docs/architecture/THINKING_VAULT_ARCHITECTURE.md`](docs/architecture/THINKING_VAULT_ARCHITECTURE.md) — Notion property columns → `Thinking/*.md` one-way sync.
+
+Canonical Knowledge OS inventory: **[docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)**
 
 Four layers + intellectual lifecycle:
 
@@ -16,10 +18,38 @@ Signal → Resource → Knowledge Object → Reflection → Concept → Project 
                                               ↘ Question ↗
 ```
 
+## Thinking Vault on GitHub (scheduled sync)
+
+Primary runtime for Notion → vault sync is **GitHub Actions** (hourly + manual).
+
+1. Repo Settings → Secrets and variables → Actions → add:
+   - `NOTION_TOKEN`
+   - `NOTION_THINKING_DATABASE_ID`
+2. Workflow: [`.github/workflows/thinking-sync.yml`](.github/workflows/thinking-sync.yml)
+3. Writes into the repo’s [`vault/`](vault/) and commits when notes change.
+4. Actions → **Thinking Vault Sync** → Run workflow (optional manual trigger).
+
+SQLite sync index is cached across runs; if the cache is cold, sync hydrates identity from on-disk `source_id` / `.thinking-folder` sidecars.
+
+Local CLI remains available for debugging.
+
+## Public website (Quartz + Cloudflare)
+
+Publish the Obsidian-style garden from `vault/` with Quartz:
+
+- Code: [`site/`](site/)
+- Guide: [`docs/architecture/QUARTZ_CLOUDFLARE_DEPLOY.md`](docs/architecture/QUARTZ_CLOUDFLARE_DEPLOY.md)
+- Connect the repo to **Cloudflare Pages** (root directory `site`, build `npm ci && npm run build`, output `public`), then bind your existing domain.
+
 ## Quick start
 
 ```bash
 cd backend && source .venv/bin/activate
+
+# Thinking Vault: Notion → vault/Thinking/ (local debug)
+# (requires NOTION_TOKEN + NOTION_THINKING_DATABASE_ID; see docs/architecture/NOTION_THINKING_DATABASE_CHECKLIST.md)
+python -m app.cli.thinking_sync --vault ../vault
+python -m app.cli.thinking_sync --status
 
 # Capture → Lake + Resource/Signal KO (vault unchanged)
 python -m app.cli.collect --job ../jobs/nature_migraine.yaml --no-media

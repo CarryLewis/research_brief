@@ -16,6 +16,10 @@ folders:
   reports_monthly: Reports/Monthly
   reports_annual: Reports/Annual
   reports_special: Reports/Special Topics
+  # Thinking Vault V1 cognitive roots
+  information: Information
+  thinking: Thinking
+  research: Research
 
 role_folders:
   concept: Concepts
@@ -24,6 +28,7 @@ role_folders:
   insight: Insights
   book: Books
   report: Reports
+  thinking: Thinking
 
 suggestion_threshold: 5
 
@@ -56,3 +61,20 @@ thinking:
   reflection_freeform: true
   preserve_existing_reflection_files: true
   preserve_human_notes_on_sync: true
+
+# Notion → Obsidian Thinking Vault (property-column contract)
+thinking_vault:
+  folder: Thinking
+  archive_folder: Archive/Thinking
+  property_names:
+    title: Name
+    status: Status
+    raw_thought: Raw Thought
+    context: Context
+    observation: Observation
+    interpretation: Interpretation
+    uncertainty: Uncertainty
+    questions: Questions
+    later_reflection: Later Reflection
+    related_information: Related Information
+    tags: Tags

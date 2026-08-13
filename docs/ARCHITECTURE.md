@@ -2,6 +2,11 @@
 
 **Status:** Living document. Synthesizes completed plans into one baseline that matches the current codebase (2026-08).
 
+> **Thinking Vault priority (2026-08):** For personal thinking capture, Notion → Obsidian sync, and vault cognitive roots (`Information/` · `Thinking/` · `Research/`), follow  
+> [`architecture/THINKING_VAULT_ARCHITECTURE.md`](architecture/THINKING_VAULT_ARCHITECTURE.md) and  
+> [`architecture/THINKING_VAULT_MIGRATION.md`](architecture/THINKING_VAULT_MIGRATION.md).  
+> Those documents **supersede** conflicting rules below (including “Notion as non-goal” and Constitution-primary folder IA). This file remains the inventory for Content Lake, KO spine, Lifecycle, and Graph Engine.
+
 **Source plans (historical; do not treat as current SoT):**
 
 | Plan | Contribution |
@@ -373,8 +378,11 @@ Derived cognitive projection (rebuildable SQLite + JSON API). Not Obsidian Graph
 - pgvector / full embedding redesign
 - Auto-writing hundreds of Concept notes
 - Auto-migration of Legacy `01_Raw` / PreConstitution Inbox into Concepts
-- Replacing Constitution folder purpose rules
-- Notion / Zotero / website UI as primary surfaces
+- ~~Replacing Constitution folder purpose rules~~ → **superseded:** vault IA moves toward Information/Thinking/Research (see Thinking Vault migration)
+- Zotero as a primary surface
+- ~~Notion as primary surface~~ → **superseded:** Notion is the Thinking input layer (see Thinking Vault docs)
+- Website UI as Thinking editor (website remains a later presentation consumer only)
+- Bidirectional Notion ↔ Obsidian sync (V1 is Notion → Obsidian only)
 - Graph visualization clients (Obsidian Graph, React Flow, D3, Cytoscape, Neo4j Browser)
 - Server-side force-directed layout as a product dependency
 
