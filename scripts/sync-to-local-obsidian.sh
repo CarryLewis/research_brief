@@ -16,9 +16,9 @@
 set -euo pipefail
 
 REPO="${RESEARCH_BRIEF_REPO:-$HOME/Documents/research_brief}"
-# Default matches vault named "Thinking valut" under Obsidian iCloud Documents.
-# If Manage vaults shows a different path, set OBSIDIAN_VAULT to that exact path.
-VAULT="${OBSIDIAN_VAULT:-$HOME/Library/Mobile Documents/iCloud~md~obsidian/Documents/Thinking valut}"
+# Default = Obsidian Manage vaults path for “Thinking valut” (iCloud Documents root).
+# Override with OBSIDIAN_VAULT if Manage vaults shows a different path.
+VAULT="${OBSIDIAN_VAULT:-$HOME/Library/Mobile Documents/iCloud~md~obsidian/Documents}"
 
 if [[ "$(uname -s)" == "Darwin" ]]; then
   LOG="${SYNC_LOG:-$HOME/Library/Logs/thinking-vault-sync.log}"

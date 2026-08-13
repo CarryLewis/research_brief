@@ -1,72 +1,62 @@
 # Local Notion → Obsidian (iCloud Thinking valut)
 
-**Goal:** Notion Thinking database writes **directly** into your Mac Obsidian vault (iCloud) for daily use, **while GitHub keeps a full repo backup**.
+**Goal:** Notion Thinking database writes **directly** into your Mac Obsidian vault (iCloud). GitHub Actions can still keep a separate repo backup.
 
-## Dual pipeline (both kept)
+## Dual pipeline
 
 ```text
-                         ┌─ (A) Mac LaunchAgent / script ──► iCloud Obsidian “Thinking valut”
+                         ┌─ (A) Mac script / LaunchAgent ──► iCloud Obsidian “Thinking valut”
 Notion Thinking DB ──────┤
-                         └─ (B) GitHub Actions (hourly) ───► GitHub repo vault/  (backup + Quartz)
+                         └─ (B) GitHub Actions (hourly) ───► repo vault/  (backup + Quartz)
 ```
 
 | Path | Destination | Purpose |
 |------|-------------|---------|
-| **A — local** | iCloud Obsidian vault | What you open and edit in Obsidian |
-| **B — GitHub** | `CarryLewis/research_brief` → `vault/Thinking/` | Cloud backup + site build source |
+| **A — local** | iCloud Obsidian vault | Daily reading / graph in Obsidian |
+| **B — GitHub** | `vault/Thinking/` on `main` | Cloud backup + Quartz |
 
-They are **independent mirrors of Notion**, not copies of each other. Turning on local direct sync does **not** disable GitHub backup.
-
-### Keep GitHub backup healthy
-
-1. Repo secrets (Settings → Secrets → Actions): `NOTION_TOKEN`, `NOTION_THINKING_DATABASE_ID`
-2. Workflow: [`.github/workflows/thinking-sync.yml`](../../.github/workflows/thinking-sync.yml) — cron hourly + manual **Run workflow**
-3. After a run, check `vault/Thinking/` on `main` for new commits like `chore(thinking): sync Notion Thinking Vault`
-
-Local Obsidian path (A):
+They are independent mirrors of Notion. Local direct sync does **not** replace GitHub backup.
 
 ## One-time Mac setup
 
 ### 1. Confirm vault path
 
-Obsidian → bottom-left vault name → **Manage vaults** → copy the path for **Thinking valut**.
+Obsidian → **Manage vaults** → copy the path for **Thinking valut**.
 
-Typical iCloud layout:
+Your current path (from Manage vaults):
 
 ```text
-/Users/carrylewis/Library/Mobile Documents/iCloud~md~obsidian/Documents/Thinking valut
+/Users/carrylewis/Library/Mobile Documents/iCloud~md~obsidian/Documents
 ```
 
-If Manage vaults shows only `.../Documents` (no `Thinking valut` suffix), use that exact path instead.
+Notes land in that folder under `Thinking/`.
 
-### 2. Pull latest scripts
+### 2. Pull latest code
 
 ```bash
 cd ~/Documents/research_brief
 git pull
 ```
 
-### 3. Put Notion secrets in repo `.env` (gitignored)
+### 3. Put Notion secrets in `.env` (gitignored — never commit)
 
 ```bash
 cat > ~/Documents/research_brief/.env <<'EOF'
-NOTION_TOKEN=ntn_your_token_here
+NOTION_TOKEN=REPLACE_WITH_YOUR_TOKEN
 NOTION_THINKING_DATABASE_ID=51e7fdfd-46f8-4d85-a813-f68b56131615
 EOF
 ```
 
-### 4. Manual direct sync (verify)
+### 4. Run direct sync once
 
 ```bash
-export OBSIDIAN_VAULT="/Users/carrylewis/Library/Mobile Documents/iCloud~md~obsidian/Documents/Thinking valut"
-# or the exact Manage vaults path
-
+export OBSIDIAN_VAULT="/Users/carrylewis/Library/Mobile Documents/iCloud~md~obsidian/Documents"
 chmod +x ~/Documents/research_brief/scripts/sync-to-local-obsidian.sh
 ~/Documents/research_brief/scripts/sync-to-local-obsidian.sh
-tail -40 ~/Library/Logs/thinking-vault-sync.log
+tail -50 ~/Library/Logs/thinking-vault-sync.log
 ```
 
-Then open Obsidian → `Thinking/`.
+Open Obsidian → `Thinking/`.
 
 ### 5. Auto every 15 minutes
 
@@ -74,8 +64,6 @@ Then open Obsidian → `Thinking/`.
 mkdir -p ~/Library/LaunchAgents
 cp ~/Documents/research_brief/scripts/macos/com.carrylewis.thinking-vault-sync.plist.example \
    ~/Library/LaunchAgents/com.carrylewis.thinking-vault-sync.plist
-
-# Edit OBSIDIAN_VAULT in the plist if your Manage vaults path differs
 
 launchctl bootout gui/$(id -u)/com.carrylewis.thinking-vault-sync 2>/dev/null || true
 launchctl bootstrap gui/$(id -u) ~/Library/LaunchAgents/com.carrylewis.thinking-vault-sync.plist
@@ -85,6 +73,7 @@ launchctl kickstart -k gui/$(id -u)/com.carrylewis.thinking-vault-sync
 ## Notes
 
 - Sync **overwrites** Notion-linked notes under `Thinking/` by `source_id`.
-- SQLite sync state lives in `~/Documents/research_brief/data/` (not in iCloud).
+- SQLite index: `~/Documents/research_brief/data/` (kept off iCloud).
 - Do not `git init` inside the iCloud Obsidian folder.
-- If `git` / Notion fail with `127.0.0.1:7890`, turn off the proxy or keep it cleared (the script clears common proxy env vars).
+- If API fails with `127.0.0.1:7890`, clear proxy / start Clash (script clears common proxy env vars).
+- Rotate the Notion integration secret if it was pasted into chat.
