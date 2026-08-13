@@ -84,7 +84,8 @@ Adapter does not know Markdown shape. Writer does not know Notion blocks.
 | Name | Title | `title` | `# Title` + filename |
 | Created | Created time | `created_at` | frontmatter `created` |
 | Updated | Last edited time | `updated_at` | frontmatter `updated` |
-| Status | Select | `status` | index only; `folder` triggers directory sync |
+| Status | Select | `status` | maturity only (`raw` / `developing` / `connected`) |
+| Type | Select | `page_type` | `thinking` (note) · `folder` (directory) · `book`/`article` (parsed, not written) |
 | Raw Thought | Rich text | `raw_thought` | `## Raw Thought` |
 | Context | Rich text | `context` | `## Context` as `[[A]]; [[B]]` |
 | Observation | Rich text | `observation` | `## Observation` |
@@ -98,7 +99,9 @@ Adapter does not know Markdown shape. Writer does not know Notion blocks.
 
 Empty properties / empty page body are omitted. Raw Thought must never be replaced by AI polish.
 
-**Status = `folder`:** create a real directory named after `Name`; Related members move into it; properties and page body stay Notion-only. Identity: `.thinking-folder` sidecar.
+**Type = `folder`:** create a real directory named after `Name`; Related thinking members move into it; properties and page body stay Notion-only. Identity: `.thinking-folder` sidecar. Legacy `Status=folder` still maps to Type=folder.
+
+**Type = `book` / `article`:** recognized but **not written** in this runtime (Information sync was removed).
 
 Do **not** add domain / topic / priority / maturity taxonomies in V1.
 

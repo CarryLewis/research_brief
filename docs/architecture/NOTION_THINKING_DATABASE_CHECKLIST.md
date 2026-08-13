@@ -25,7 +25,8 @@ Use these **display names**. Overrides go in `DEFAULT_PROPERTY_NAMES` in [`backe
 | Name | Title | Default title property (rename to `Name` if needed) |
 | Created | Created time | Built-in or Created time property |
 | Updated | Last edited time | Built-in last edited time |
-| Status | Select | Options: `raw`, `developing`, `connected`, `folder` |
+| Status | Select | Options: `raw`, `developing`, `connected` (maturity only) |
+| Type | Select | Options: `thinking`, `folder`, `book`, `article`. `folder` creates a real directory. `book`/`article` are parsed but not written. |
 | Raw Thought | Rich text | Original expression — never overwritten by AI polish |
 | Context | Rich text | Optional |
 | Observation | Rich text | Optional |

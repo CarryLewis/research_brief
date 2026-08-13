@@ -2,7 +2,14 @@
 
 from .adapter import NotionThinkingAdapter
 from .blocks import blocks_to_markdown
-from .model import STATUS_FOLDER, ThinkingConnection, ThinkingObject
+from .membership import FolderMembership, build_folder_membership
+from .model import (
+    PAGE_TYPE_FOLDER,
+    PAGE_TYPE_THINKING,
+    STATUS_FOLDER,
+    ThinkingConnection,
+    ThinkingObject,
+)
 from .normalizer import normalize_page
 from .notion_client import NotionAPIError, NotionClient
 from .sync import (
@@ -19,6 +26,9 @@ from .writer import (
 )
 
 __all__ = [
+    "FolderMembership",
+    "PAGE_TYPE_FOLDER",
+    "PAGE_TYPE_THINKING",
     "STATUS_FOLDER",
     "NotionAPIError",
     "NotionClient",
@@ -28,6 +38,7 @@ __all__ = [
     "ThinkingObject",
     "apply_thinking_objects",
     "blocks_to_markdown",
+    "build_folder_membership",
     "hydrate_sync_state_from_vault",
     "last_sync_status",
     "normalize_page",
