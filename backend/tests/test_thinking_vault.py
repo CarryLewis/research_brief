@@ -348,6 +348,48 @@ def test_sync_idempotent_and_archive(db_session, vault_path: Path):
     assert archived
 
 
+def test_hydrate_sync_state_from_vault_enables_rename(db_session, vault_path: Path):
+    from app.db import ThinkingSyncState
+    from app.services.thinking_vault.sync import hydrate_sync_state_from_vault
+    from app.services.thinking_vault.writer import FOLDER_SIDECAR, write_thinking_folder
+
+    note = ThinkingObject(
+        title="Cold Start Note",
+        source_id="hydrate-note-1",
+        raw_thought="seed",
+        updated_at="2026-08-12T10:00:00.000Z",
+    )
+    folder = ThinkingObject(
+        title="Cold Start Folder",
+        source_id="hydrate-folder-1",
+        status="folder",
+        updated_at="2026-08-12T10:00:00.000Z",
+    )
+    # Write files without any SQLite rows (simulates Actions cache miss).
+    write_thinking_note(vault_path, note)
+    write_thinking_folder(vault_path, folder)
+    assert db_session.get(ThinkingSyncState, "hydrate-note-1") is None
+
+    seeded = hydrate_sync_state_from_vault(db_session, vault_path)
+    assert seeded >= 2
+    note_row = db_session.get(ThinkingSyncState, "hydrate-note-1")
+    folder_row = db_session.get(ThinkingSyncState, "hydrate-folder-1")
+    assert note_row is not None and note_row.status == "active"
+    assert folder_row is not None and folder_row.status == "active"
+    assert (vault_path / folder_row.vault_path / FOLDER_SIDECAR).is_file()
+
+    # Empty DB again, then apply rename via hydrated previous path.
+    db_session.delete(note_row)
+    db_session.delete(folder_row)
+    db_session.commit()
+    note.title = "Renamed After Hydrate"
+    note.updated_at = "2026-08-12T11:00:00.000Z"
+    result = apply_thinking_objects(db_session, [note, folder], vault_path=str(vault_path))
+    assert result.errors == []
+    assert (vault_path / "Thinking" / "Renamed After Hydrate.md").is_file()
+    assert not (vault_path / "Thinking" / "Cold Start Note.md").exists()
+
+
 def test_folder_status_fingerprint_ignores_body_props():
     folder = ThinkingObject(
         title="Clinical themes",

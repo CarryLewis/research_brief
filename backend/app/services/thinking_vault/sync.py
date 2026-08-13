@@ -15,15 +15,20 @@ from typing import Any
 from sqlalchemy.orm import Session
 
 from ...db import ThinkingSyncState, utcnow
-from ...utils import workspace_config_dict
+from ...utils import content_hash, workspace_config_dict
 from .adapter import NotionThinkingAdapter
 from .model import ThinkingObject
 from .notion_client import NotionAPIError, NotionClient
 from .writer import (
     WriteResult,
+    archive_root,
     archive_thinking_folder,
     archive_thinking_note,
+    iter_thinking_folders,
+    iter_thinking_notes,
     notes_root,
+    read_folder_sidecar,
+    read_note_source_id,
     thinking_vault_cfg,
     write_thinking_folder,
     write_thinking_note,
@@ -259,6 +264,73 @@ def _topo_folder_order(
     return ordered
 
 
+def hydrate_sync_state_from_vault(
+    db: Session,
+    vault_path: str | Path,
+    *,
+    cfg: dict | None = None,
+) -> int:
+    """Seed missing ThinkingSyncState rows from on-disk notes/folders.
+
+    Needed for GitHub Actions (ephemeral SQLite) so renames and soft-archive
+    still work across workflow runs when the DB cache is cold.
+    """
+    vault = Path(vault_path).expanduser()
+    cfg = cfg or workspace_config_dict()
+    archive = archive_root(vault, cfg)
+    seeded = 0
+
+    for path in iter_thinking_notes(vault, cfg):
+        source_id = read_note_source_id(path)
+        if not source_id or _get_state(db, source_id) is not None:
+            continue
+        try:
+            rel = str(path.relative_to(vault))
+        except ValueError:
+            continue
+        try:
+            digest = content_hash(path.read_text(encoding="utf-8"))
+        except OSError:
+            digest = ""
+        under_archive = archive in path.parents or path.parent == archive
+        _upsert_state(
+            db,
+            source_id=source_id,
+            title=path.stem,
+            vault_path=rel,
+            content_hash_value=digest,
+            notion_last_edited="",
+            status="archived" if under_archive else "active",
+        )
+        seeded += 1
+
+    for folder in iter_thinking_folders(vault, cfg):
+        meta = read_folder_sidecar(folder) or {}
+        source_id = str(meta.get("source_id") or "").strip()
+        if not source_id or _get_state(db, source_id) is not None:
+            continue
+        try:
+            rel = str(folder.relative_to(vault))
+        except ValueError:
+            continue
+        under_archive = archive in folder.parents or folder.parent == archive
+        title = str(meta.get("title") or folder.name).strip() or folder.name
+        _upsert_state(
+            db,
+            source_id=source_id,
+            title=title,
+            vault_path=rel,
+            content_hash_value="",
+            notion_last_edited="",
+            status="archived" if under_archive else "active",
+        )
+        seeded += 1
+
+    if seeded:
+        logger.info("Hydrated %s ThinkingSyncState rows from vault", seeded)
+    return seeded
+
+
 def apply_thinking_objects(
     db: Session,
     objects: list[ThinkingObject],
@@ -272,6 +344,7 @@ def apply_thinking_objects(
     result = SyncResult()
     vault = Path(vault_path).expanduser()
     notes_base = notes_root(vault, cfg)
+    hydrate_sync_state_from_vault(db, vault, cfg=cfg)
 
     folders = [o for o in objects if o.is_folder() and o.source_id]
     notes = [o for o in objects if not o.is_folder() and o.source_id]

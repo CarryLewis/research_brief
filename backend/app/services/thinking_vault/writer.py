@@ -172,7 +172,7 @@ def _atomic_write(path: Path, content: str) -> None:
                 pass
 
 
-def _read_source_id(path: Path) -> str | None:
+def read_note_source_id(path: Path) -> str | None:
     try:
         text = path.read_text(encoding="utf-8")
     except OSError:
@@ -183,7 +183,11 @@ def _read_source_id(path: Path) -> str | None:
     return match.group(1).strip()
 
 
-def _read_folder_sidecar(folder: Path) -> dict | None:
+# Backward-compatible alias used inside this module.
+_read_source_id = read_note_source_id
+
+
+def read_folder_sidecar(folder: Path) -> dict | None:
     sidecar = folder / FOLDER_SIDECAR
     if not sidecar.is_file():
         return None
@@ -192,6 +196,10 @@ def _read_folder_sidecar(folder: Path) -> dict | None:
     except (OSError, yaml.YAMLError):
         return None
     return data if isinstance(data, dict) else None
+
+
+# Backward-compatible alias used inside this module.
+_read_folder_sidecar = read_folder_sidecar
 
 
 def _write_folder_sidecar(folder: Path, *, source_id: str, title: str) -> None:

@@ -56,10 +56,13 @@ The database is an **index of thinking slots**, not an ontology.
 ```text
 Fill property columns on a Thinking page
         ↓
-POST /api/thinking/sync  or  python -m app.cli.thinking_sync
+GitHub Actions (hourly / workflow_dispatch)
+  or: POST /api/thinking/sync  /  python -m app.cli.thinking_sync
         ↓
-Thinking/{Name}.md
+vault/Thinking/{Name}.md  (committed by Actions when changed)
 ```
+
+GitHub setup: add repository secrets `NOTION_TOKEN` + `NOTION_THINKING_DATABASE_ID`, then enable [`.github/workflows/thinking-sync.yml`](../../.github/workflows/thinking-sync.yml).
 
 - Empty properties → section omitted
 - `Related Information` → `## Connections` with `[[Target Name]]` (ordinary notes)

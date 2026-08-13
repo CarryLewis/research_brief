@@ -18,12 +18,27 @@ Signal → Resource → Knowledge Object → Reflection → Concept → Project 
                                               ↘ Question ↗
 ```
 
+## Thinking Vault on GitHub (scheduled sync)
+
+Primary runtime for Notion → vault sync is **GitHub Actions** (hourly + manual).
+
+1. Repo Settings → Secrets and variables → Actions → add:
+   - `NOTION_TOKEN`
+   - `NOTION_THINKING_DATABASE_ID`
+2. Workflow: [`.github/workflows/thinking-sync.yml`](.github/workflows/thinking-sync.yml)
+3. Writes into the repo’s [`vault/`](vault/) and commits when notes change.
+4. Actions → **Thinking Vault Sync** → Run workflow (optional manual trigger).
+
+SQLite sync index is cached across runs; if the cache is cold, sync hydrates identity from on-disk `source_id` / `.thinking-folder` sidecars.
+
+Local CLI remains available for debugging.
+
 ## Quick start
 
 ```bash
 cd backend && source .venv/bin/activate
 
-# Thinking Vault: Notion → Obsidian Thinking/
+# Thinking Vault: Notion → vault/Thinking/ (local debug)
 # (requires NOTION_TOKEN + NOTION_THINKING_DATABASE_ID; see docs/architecture/NOTION_THINKING_DATABASE_CHECKLIST.md)
 python -m app.cli.thinking_sync --vault ../vault
 python -m app.cli.thinking_sync --status
