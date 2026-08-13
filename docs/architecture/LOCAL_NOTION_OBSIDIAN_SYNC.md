@@ -1,16 +1,29 @@
 # Local Notion → Obsidian (iCloud Thinking valut)
 
-**Goal:** Notion Thinking database writes **directly** into your Mac Obsidian vault (iCloud), without waiting on GitHub `rsync`.
+**Goal:** Notion Thinking database writes **directly** into your Mac Obsidian vault (iCloud) for daily use, **while GitHub keeps a full repo backup**.
+
+## Dual pipeline (both kept)
 
 ```text
-Notion Thinking DB
-        ↓  Notion API (on your Mac)
-python -m app.cli.thinking_sync --vault "$OBSIDIAN_VAULT"
-        ↓
-OBSIDIAN_VAULT/Thinking/*.md   ← opened by Obsidian “Thinking valut”
+                         ┌─ (A) Mac LaunchAgent / script ──► iCloud Obsidian “Thinking valut”
+Notion Thinking DB ──────┤
+                         └─ (B) GitHub Actions (hourly) ───► GitHub repo vault/  (backup + Quartz)
 ```
 
-GitHub Actions can still update the **repo** `vault/` for backup / Quartz. That path is separate from your iCloud Obsidian vault.
+| Path | Destination | Purpose |
+|------|-------------|---------|
+| **A — local** | iCloud Obsidian vault | What you open and edit in Obsidian |
+| **B — GitHub** | `CarryLewis/research_brief` → `vault/Thinking/` | Cloud backup + site build source |
+
+They are **independent mirrors of Notion**, not copies of each other. Turning on local direct sync does **not** disable GitHub backup.
+
+### Keep GitHub backup healthy
+
+1. Repo secrets (Settings → Secrets → Actions): `NOTION_TOKEN`, `NOTION_THINKING_DATABASE_ID`
+2. Workflow: [`.github/workflows/thinking-sync.yml`](../../.github/workflows/thinking-sync.yml) — cron hourly + manual **Run workflow**
+3. After a run, check `vault/Thinking/` on `main` for new commits like `chore(thinking): sync Notion Thinking Vault`
+
+Local Obsidian path (A):
 
 ## One-time Mac setup
 
