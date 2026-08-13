@@ -33,6 +33,10 @@ def thinking_vault_cfg(cfg: dict | None = None) -> dict:
         "archive_folder",
         str(Path(folders.get("archive") or "Archive") / "Thinking"),
     )
+    info_root = folders.get("information") or "Information"
+    tv.setdefault("information_folder", info_root)
+    tv.setdefault("information_books", str(Path(info_root) / "Books"))
+    tv.setdefault("information_articles", str(Path(info_root) / "Articles"))
     return tv
 
 
@@ -139,6 +143,47 @@ def render_markdown(obj: ThinkingObject) -> str:
     return "\n".join(lines)
 
 
+def render_information_markdown(obj: ThinkingObject) -> str:
+    """Render book/article notes under Information/ (not Thinking sections)."""
+    page_type = obj.page_type if obj.is_information() else "article"
+    lines = [
+        "---",
+        "source: notion",
+        f'source_id: "{_yaml_escape(obj.source_id)}"',
+        f"type: {page_type}",
+        f"created: {_date_only(obj.created_at)}",
+        f"updated: {_date_only(obj.updated_at)}",
+    ]
+    if obj.source_url:
+        lines.append(f'url: "{_yaml_escape(obj.source_url)}"')
+    if obj.tags:
+        lines.append("tags:")
+        for tag in obj.tags:
+            lines.append(f"  - {tag}")
+    lines.extend(["---", "", f"# {obj.title}"])
+
+    body = (obj.page_body or "").strip() or (obj.raw_thought or "").strip()
+    if body:
+        lines.extend(["", "## Body", "", body])
+
+    if obj.connections:
+        lines.extend(["", "## Connections", ""])
+        seen: set[str] = set()
+        for conn in obj.connections:
+            title = conn.title.strip()
+            if not title or title in seen:
+                continue
+            seen.add(title)
+            lines.append(f"[[{title}]]")
+
+    footer_tags = [t.strip() for t in (obj.tags or []) if str(t or "").strip()]
+    if footer_tags:
+        lines.extend(["", " ".join(f"#{t}" for t in footer_tags)])
+
+    lines.append("")
+    return "\n".join(lines)
+
+
 def _atomic_write(path: Path, content: str) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     fd, tmp_name = tempfile.mkstemp(prefix=".tv_", suffix=".md", dir=str(path.parent))
@@ -211,6 +256,7 @@ def write_thinking_note(
     previous_relpath: str | None = None,
     previous_hash: str | None = None,
     cfg: dict | None = None,
+    target_folder: str | None = None,
 ) -> WriteResult:
     """Write or update one Thinking markdown file. Idempotent by content hash."""
     if not obj.source_id:
@@ -218,7 +264,7 @@ def write_thinking_note(
 
     vault = Path(vault_path).expanduser()
     tv = thinking_vault_cfg(cfg)
-    folder = str(tv.get("folder") or "Thinking")
+    folder = (target_folder or "").strip() or str(tv.get("folder") or "Thinking")
     markdown = render_markdown(obj)
     digest = content_hash(markdown)
 
@@ -278,6 +324,155 @@ def write_thinking_note(
         vault_path=rel,
         action=action,
         content_hash=digest,
+    )
+
+
+def write_information_note(
+    vault_path: str | Path,
+    obj: ThinkingObject,
+    *,
+    previous_relpath: str | None = None,
+    previous_hash: str | None = None,
+    cfg: dict | None = None,
+) -> WriteResult:
+    """Write book/article markdown under Information/Books|Articles."""
+    if not obj.source_id:
+        raise ValueError("ThinkingObject.source_id is required")
+
+    vault = Path(vault_path).expanduser()
+    tv = thinking_vault_cfg(cfg)
+    if obj.page_type == "book":
+        folder = str(tv.get("information_books") or "Information/Books")
+    else:
+        folder = str(tv.get("information_articles") or "Information/Articles")
+
+    markdown = render_information_markdown(obj)
+    digest = content_hash(markdown)
+    dest, path_kind = resolve_note_path(
+        vault,
+        obj,
+        previous_relpath=previous_relpath,
+        folder=folder,
+    )
+
+    if previous_hash and previous_hash == digest and dest.is_file():
+        rel = str(dest.relative_to(vault))
+        return WriteResult(
+            source_id=obj.source_id,
+            vault_path=rel,
+            action="unchanged",
+            content_hash=digest,
+        )
+
+    old_path: Path | None = None
+    if previous_relpath:
+        maybe_old = vault / previous_relpath
+        if maybe_old.is_file() and maybe_old.resolve() != dest.resolve():
+            if _read_source_id(maybe_old) == obj.source_id:
+                old_path = maybe_old
+
+    _atomic_write(dest, markdown)
+    if old_path is not None and old_path.exists():
+        try:
+            old_path.unlink()
+        except OSError as exc:
+            logger.warning("Could not remove old Information file %s: %s", old_path, exc)
+
+    rel = str(dest.relative_to(vault))
+    if path_kind == "renamed" or (old_path is not None):
+        action = "renamed"
+    elif previous_hash or previous_relpath:
+        action = "updated"
+    else:
+        action = "created"
+    if action == "created" and previous_relpath:
+        action = "updated"
+
+    logger.info("Information note %s → %s (%s)", obj.source_id, rel, action)
+    return WriteResult(
+        source_id=obj.source_id,
+        vault_path=rel,
+        action=action,
+        content_hash=digest,
+    )
+
+
+def write_folder_directory(
+    vault_path: str | Path,
+    obj: ThinkingObject,
+    *,
+    folder_dir: str,
+    previous_relpath: str | None = None,
+    previous_hash: str | None = None,
+) -> WriteResult:
+    """Ensure a real Obsidian directory exists for a Type=folder page (no .md)."""
+    if not obj.source_id:
+        raise ValueError("ThinkingObject.source_id is required")
+    vault = Path(vault_path).expanduser()
+    rel = (folder_dir or "").strip().strip("/")
+    if not rel:
+        raise ValueError("folder_dir is required")
+    digest = content_hash(f"folder:{rel}:{obj.title}:{obj.source_id}")
+    dest = vault / rel
+    existed = dest.is_dir()
+    dest.mkdir(parents=True, exist_ok=True)
+    keep = dest / ".gitkeep"
+    if not keep.exists():
+        keep.write_text("", encoding="utf-8")
+
+    if previous_hash == digest and existed:
+        action = "unchanged"
+    elif previous_relpath:
+        action = "updated"
+    else:
+        action = "created"
+
+    logger.info("Folder dir %s → %s (%s)", obj.source_id, rel, action)
+    return WriteResult(
+        source_id=obj.source_id,
+        vault_path=rel,
+        action=action,
+        content_hash=digest,
+    )
+
+
+def write_vault_object(
+    vault_path: str | Path,
+    obj: ThinkingObject,
+    *,
+    previous_relpath: str | None = None,
+    previous_hash: str | None = None,
+    cfg: dict | None = None,
+    target_folder: str | None = None,
+    folder_dir: str | None = None,
+) -> WriteResult:
+    """Dispatch write by page Type."""
+    if obj.is_folder():
+        if not folder_dir:
+            tv = thinking_vault_cfg(cfg)
+            folder_dir = str(Path(tv.get("folder") or "Thinking") / natural_stem(obj.title))
+        return write_folder_directory(
+            vault_path,
+            obj,
+            folder_dir=folder_dir,
+            previous_relpath=previous_relpath,
+            previous_hash=previous_hash,
+        )
+    if obj.is_information():
+        return write_information_note(
+            vault_path,
+            obj,
+            previous_relpath=previous_relpath,
+            previous_hash=previous_hash,
+            cfg=cfg,
+        )
+    return write_thinking_note(
+        vault_path,
+        obj,
+        previous_relpath=previous_relpath,
+        previous_hash=previous_hash,
+        cfg=cfg,
+        target_folder=target_folder,
     )
 
 

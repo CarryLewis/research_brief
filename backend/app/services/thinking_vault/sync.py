@@ -3,7 +3,9 @@
 from __future__ import annotations
 
 import logging
+import shutil
 from dataclasses import dataclass, field
+from pathlib import Path
 from typing import Any
 
 from sqlalchemy.orm import Session
@@ -11,9 +13,15 @@ from sqlalchemy.orm import Session
 from ...db import ThinkingSyncState, utcnow
 from ...utils import workspace_config_dict
 from .adapter import NotionThinkingAdapter
+from .membership import build_folder_membership
 from .model import ThinkingObject
 from .notion_client import NotionAPIError, NotionClient
-from .writer import WriteResult, archive_thinking_note, thinking_vault_cfg, write_thinking_note
+from .writer import (
+    WriteResult,
+    archive_thinking_note,
+    thinking_vault_cfg,
+    write_vault_object,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -26,6 +34,7 @@ class SyncResult:
     unchanged: int = 0
     archived: int = 0
     errors: list[str] = field(default_factory=list)
+    warnings: list[str] = field(default_factory=list)
     items: list[dict[str, Any]] = field(default_factory=list)
 
     def to_dict(self) -> dict[str, Any]:
@@ -36,6 +45,7 @@ class SyncResult:
             "unchanged": self.unchanged,
             "archived": self.archived,
             "errors": list(self.errors),
+            "warnings": list(self.warnings),
             "items": list(self.items),
         }
 
@@ -87,26 +97,42 @@ def apply_thinking_objects(
     soft_archive_missing: bool = True,
     cfg: dict | None = None,
 ) -> SyncResult:
-    """Write Thinking objects to the vault and update sync state.
-
-    Same-batch title index should already be applied inside objects' connections.
-    """
+    """Write Thinking / folder / information objects to the vault and update sync state."""
     cfg = cfg or workspace_config_dict()
+    tv = thinking_vault_cfg(cfg)
+    thinking_root = str(tv.get("folder") or "Thinking")
     result = SyncResult()
     seen_ids: set[str] = set()
 
-    for obj in objects:
+    membership = build_folder_membership(objects, thinking_root=thinking_root)
+    result.warnings.extend(membership.warnings)
+
+    # Folders first (create directories), then notes.
+    ordered = sorted(objects, key=lambda o: (0 if o.is_folder() else 1, o.title.lower()))
+
+    for obj in ordered:
         seen_ids.add(obj.source_id)
         state = _get_state(db, obj.source_id)
         prev_path = state.vault_path if state and state.status == "active" else None
         prev_hash = state.content_hash if state else None
+        target_folder = None
+        folder_dir = None
+        if obj.is_folder():
+            folder_dir = membership.folder_dirs.get(obj.source_id) or str(
+                Path(thinking_root) / obj.title
+            )
+        elif obj.is_thinking():
+            target_folder = membership.thinking_dirs.get(obj.source_id) or thinking_root
+
         try:
-            write = write_thinking_note(
+            write = write_vault_object(
                 vault_path,
                 obj,
                 previous_relpath=prev_path,
                 previous_hash=prev_hash,
                 cfg=cfg,
+                target_folder=target_folder,
+                folder_dir=folder_dir,
             )
         except Exception as exc:  # noqa: BLE001
             msg = f"write failed for {obj.source_id}: {exc}"
@@ -128,6 +154,7 @@ def apply_thinking_objects(
             {
                 "source_id": obj.source_id,
                 "title": obj.title,
+                "page_type": obj.page_type,
                 "vault_path": write.vault_path,
                 "action": write.action,
             }
@@ -143,7 +170,7 @@ def apply_thinking_objects(
             if row.source_id in seen_ids:
                 continue
             try:
-                archived = archive_thinking_note(
+                archived = _archive_path(
                     vault_path,
                     previous_relpath=row.vault_path,
                     source_id=row.source_id,
@@ -171,6 +198,35 @@ def apply_thinking_objects(
             )
 
     return result
+
+
+def _archive_path(
+    vault_path: str,
+    *,
+    previous_relpath: str,
+    source_id: str,
+    cfg: dict | None,
+) -> str | None:
+    vault = Path(vault_path).expanduser()
+    src = vault / previous_relpath
+    if src.is_dir():
+        tv = thinking_vault_cfg(cfg)
+        archive_folder = str(tv.get("archive_folder") or "Archive/Thinking")
+        dest_dir = vault / archive_folder
+        dest_dir.mkdir(parents=True, exist_ok=True)
+        dest = dest_dir / src.name
+        if dest.exists():
+            dest = dest_dir / f"{src.name}-archived"
+        shutil.move(str(src), str(dest))
+        rel = str(dest.relative_to(vault))
+        logger.info("Archived folder %s → %s", source_id, rel)
+        return rel
+    return archive_thinking_note(
+        vault_path,
+        previous_relpath=previous_relpath,
+        source_id=source_id,
+        cfg=cfg,
+    )
 
 
 def _count_action(result: SyncResult, write: WriteResult) -> None:

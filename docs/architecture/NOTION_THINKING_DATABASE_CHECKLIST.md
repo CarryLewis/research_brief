@@ -23,18 +23,20 @@ Use these **display names** unless you override `thinking_vault.property_names` 
 | Property name | Notion type | Notes |
 |---------------|-------------|-------|
 | Name | Title | Default title property (rename to `Name` if needed) |
+| Type | Select | `thinking` / `folder` / `book` / `article` — page kind |
 | Created | Created time | Built-in or Created time property |
 | Updated | Last edited time | Built-in last edited time |
-| Status | Select | Keep options few (e.g. `raw`, `developing`, `connected`) |
+| Status | Select | Maturity only: `raw`, `developing`, `connected` (not folder) |
+| Source URL | URL | Optional; used by book/article |
 | Raw Thought | Rich text | Original expression — never overwritten by AI polish |
-| Context | Rich text | Optional |
+| Context | Rich text | Optional; thinking anchors |
 | Observation | Rich text | Optional |
 | Interpretation | Rich text | Optional |
 | Uncertainty | Rich text | Optional |
 | Questions | Rich text | Optional; bullet lines OK |
 | Later Reflection | Rich text | Optional |
 | Tags | Multi-select | Controlled filter vocabulary (`medicine`, `neurology`, …). Syncs to Obsidian page footer as `#tag`. Not Context. |
-| Related Information | Relation | Link to other Thinking pages and/or Information pages |
+| Related Information | Relation | thinking: links; folder: membership list |
 
 ---
 
@@ -43,11 +45,12 @@ Use these **display names** unless you override `thinking_vault.property_names` 
 - Domain / category / subcategory / topic / subtopic
 - Priority / maturity / knowledge type / workspace / project / concept taxonomies
 - Free-form / dozens of ad-hoc tags outside the allowlist
+- Encoding page kind in Status (use **Type** instead)
 
-Allowed: one controlled **Tags** multi-select (filter labels only).  
+Allowed: controlled **Tags** multi-select; **Type** select; **folder** membership directories under `Thinking/`.  
 Context stays text anchors → `[[wikilink]]`; Tags stay multi-select → footer `#tag`.
 
-The database is an **index of thinking slots**, not an ontology.
+The database is an **index of thinking + light information slots**, not an ontology.
 
 ---
 
@@ -58,11 +61,17 @@ Fill property columns on a Thinking page
         ↓
 POST /api/thinking/sync  or  python -m app.cli.thinking_sync
         ↓
-Thinking/{Name}.md
+Type branches:
+  thinking → Thinking/{Name}.md (or Thinking/{Folder}/…)
+  folder   → Thinking/{Name}/   (directory only)
+  book     → Information/Books/{Name}.md
+  article  → Information/Articles/{Name}.md
 ```
 
 - Empty properties → section omitted
-- `Related Information` → `## Connections` with `[[Target Name]]`
+- `Related Information` on thinking → `## Connections` with `[[Target Name]]`
+- `Related Information` on folder → membership (thinking members only move under the folder)
+- One page ≤ one folder; conflicts stay at root + warning
 - `Tags` → page-bottom `#medicine #neurology` (omitted when empty; no `## Tags` section)
 - `Context` → `## Context` with `[[anchors]]` (never as `#tag`)
 - Identity = Notion page id (`source_id` in frontmatter), not filename

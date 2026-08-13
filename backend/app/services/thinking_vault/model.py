@@ -28,6 +28,21 @@ SECTION_HEADINGS: dict[str, str] = {
 # Notion page body (blocks) → Obsidian section; not a database property.
 PAGE_BODY_HEADING = "Extended Reflection"
 
+PAGE_TYPE_THINKING = "thinking"
+PAGE_TYPE_FOLDER = "folder"
+PAGE_TYPE_BOOK = "book"
+PAGE_TYPE_ARTICLE = "article"
+
+PAGE_TYPES = frozenset(
+    {
+        PAGE_TYPE_THINKING,
+        PAGE_TYPE_FOLDER,
+        PAGE_TYPE_BOOK,
+        PAGE_TYPE_ARTICLE,
+    }
+)
+INFORMATION_PAGE_TYPES = frozenset({PAGE_TYPE_BOOK, PAGE_TYPE_ARTICLE})
+
 
 @dataclass
 class ThinkingConnection:
@@ -57,6 +72,8 @@ class ThinkingObject:
     source_id: str = ""
     created_at: str = ""
     updated_at: str = ""
+    page_type: str = PAGE_TYPE_THINKING
+    source_url: str = ""
     raw_thought: str = ""
     context: str = ""
     observation: str = ""
@@ -77,6 +94,17 @@ class ThinkingObject:
         self.updated_at = (self.updated_at or "").strip()
         self.status = (self.status or "").strip()
         self.page_body = (self.page_body or "").strip()
+        self.source_url = (self.source_url or "").strip()
+        raw_type = (self.page_type or "").strip().lower()
+        # Legacy: Status=folder before Type existed
+        if raw_type == PAGE_TYPE_FOLDER or self.status.lower() == PAGE_TYPE_FOLDER:
+            self.page_type = PAGE_TYPE_FOLDER
+            if self.status.lower() == PAGE_TYPE_FOLDER:
+                self.status = "connected"
+        elif raw_type in PAGE_TYPES:
+            self.page_type = raw_type
+        else:
+            self.page_type = PAGE_TYPE_THINKING
         for name in SECTION_FIELDS:
             setattr(self, name, (getattr(self, name) or "").strip())
         cleaned: list[ThinkingConnection] = []
@@ -104,11 +132,22 @@ class ThinkingObject:
             cleaned_tags.append(tag)
         self.tags = cleaned_tags
 
+    def is_folder(self) -> bool:
+        return self.page_type == PAGE_TYPE_FOLDER
+
+    def is_information(self) -> bool:
+        return self.page_type in INFORMATION_PAGE_TYPES
+
+    def is_thinking(self) -> bool:
+        return self.page_type == PAGE_TYPE_THINKING
+
     def content_fingerprint(self) -> str:
         """Stable hash input for idempotent sync."""
         parts = [
             self.title,
             self.source_id,
+            self.page_type,
+            self.source_url,
             self.created_at,
             self.updated_at,
             self.status,

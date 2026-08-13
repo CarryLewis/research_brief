@@ -11,6 +11,8 @@ from .model import ThinkingConnection, ThinkingObject
 DEFAULT_PROPERTY_NAMES: dict[str, str] = {
     "title": "Name",
     "status": "Status",
+    "page_type": "Type",
+    "source_url": "Source URL",
     "raw_thought": "Raw Thought",
     "context": "Context",
     "observation": "Observation",
@@ -100,6 +102,15 @@ def extract_multi_select_prop(properties: dict[str, Any], name: str) -> list[str
     return out
 
 
+def extract_url_prop(properties: dict[str, Any], name: str) -> str:
+    prop = properties.get(name)
+    if not isinstance(prop, dict):
+        return ""
+    if prop.get("type") == "url":
+        return str(prop.get("url") or "").strip()
+    return ""
+
+
 def extract_relation_ids(properties: dict[str, Any], name: str) -> list[str]:
     prop = properties.get(name)
     if not isinstance(prop, dict) or prop.get("type") != "relation":
@@ -144,6 +155,9 @@ def normalize_page(
         connections.append(ThinkingConnection(title=rel_title, source_id=rel_id))
 
     tags = normalize_filter_tags(extract_multi_select_prop(props, names["tags"]))
+    page_type = extract_select_prop(props, names.get("page_type", "Type"))
+    source_url = extract_url_prop(props, names.get("source_url", "Source URL"))
+    status = extract_select_prop(props, names["status"])
 
     return ThinkingObject(
         title=title,
@@ -151,6 +165,8 @@ def normalize_page(
         source_id=str(page.get("id") or "").strip(),
         created_at=notion_datetime(page, created=True),
         updated_at=notion_datetime(page, created=False),
+        page_type=page_type,
+        source_url=source_url,
         raw_thought=extract_rich_text_prop(props, names["raw_thought"]),
         context=extract_rich_text_prop(props, names["context"]),
         observation=extract_rich_text_prop(props, names["observation"]),
@@ -161,7 +177,7 @@ def normalize_page(
         page_body=(page_body or "").strip(),
         connections=connections,
         tags=tags,
-        status=extract_select_prop(props, names["status"]),
+        status=status,
     )
 
 

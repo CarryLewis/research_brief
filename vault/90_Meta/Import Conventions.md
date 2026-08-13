@@ -24,9 +24,24 @@ These constrain capture/sync. They are **not** how you should write day to day.
 ## Thinking Vault path (Notion → Obsidian)
 
 1. Capture / clarify in Notion Thinking Database (**property columns**)
-2. `python -m app.cli.thinking_sync` or `POST /api/thinking/sync`
-3. Notes land in `Thinking/{Name}.md` with minimal `source` / `source_id` frontmatter
-4. `Related Information` → `## Connections` Wikilinks
+2. Set **Type** (`thinking` / `folder` / `book` / `article`); **Status** is maturity only
+3. `python -m app.cli.thinking_sync` or `POST /api/thinking/sync`
+4. Outputs:
+   - `thinking` → `Thinking/{Name}.md` (or `Thinking/{Folder}/…` if a folder claims it)
+   - `folder` → real directory `Thinking/{Name}/` (no index `.md`)
+   - `book` / `article` → `Information/Books|Articles/{Name}.md`
+5. `Related Information` → thinking Connections Wikilinks; on folders = membership list
+
+### Page Types
+
+| Type | Role | Obsidian |
+|------|------|----------|
+| thinking | Personal thought | `Thinking/…/*.md` |
+| folder | Container | `Thinking/{Name}/` directory only |
+| book | Information card | `Information/Books/` |
+| article | Information card | `Information/Articles/` |
+
+**Rules:** one page belongs to at most one folder; folder membership is via the folder's Related Information; only thinking members are physically moved under the folder.
 
 See [`docs/architecture/THINKING_VAULT_ARCHITECTURE.md`](../../docs/architecture/THINKING_VAULT_ARCHITECTURE.md) and the Notion checklist.
 

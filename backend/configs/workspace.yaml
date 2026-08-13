@@ -78,3 +78,5 @@ thinking_vault:
     later_reflection: Later Reflection
     related_information: Related Information
     tags: Tags
+    page_type: Type
+    source_url: Source URL

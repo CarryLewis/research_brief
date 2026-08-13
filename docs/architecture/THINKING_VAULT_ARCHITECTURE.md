@@ -140,21 +140,28 @@ Empty properties / empty page body are omitted on export. Raw Thought must never
 
 | Notion property | Type | → Canonical | → Obsidian |
 |-----------------|------|-------------|------------|
-| Name | Title | `title` | `# Title` + filename |
+| Name | Title | `title` | `# Title` + filename / folder name |
+| Type | Select | `page_type` | Branch: thinking / folder / book / article |
 | Created | Created time | `created_at` | frontmatter `created` |
 | Updated | Last edited time | `updated_at` | frontmatter `updated` |
-| Status | Select | `status` | index/log only (not graph) |
-| Raw Thought | Rich text | `raw_thought` | `## Raw Thought` |
-| Context | Rich text | `context` | `## Context` as `[[A]]; [[B]]` (semicolon-separated anchors) |
+| Status | Select | `status` | maturity only (`raw` / `developing` / `connected`) |
+| Source URL | URL | `source_url` | Information frontmatter `url` |
+| Raw Thought | Rich text | `raw_thought` | `## Raw Thought` (thinking only) |
+| Context | Rich text | `context` | `## Context` as `[[A]]; [[B]]` |
 | Observation | Rich text | `observation` | `## Observation` |
 | Interpretation | Rich text | `interpretation` | `## Interpretation` |
 | Uncertainty | Rich text | `uncertainty` | `## Uncertainty` |
 | Questions | Rich text | `questions` | `## Questions` |
 | Later Reflection | Rich text | `later_reflection` | `## Later Reflection` |
-| Related Information | Relation | `connections[]` | `## Connections` + `[[Title]]` |
-| *(page body blocks)* | Blocks | `page_body` | `## Extended Reflection` |
+| Tags | Multi-select | `tags` | page-bottom `#tag` |
+| Related Information | Relation | `connections[]` | thinking: `## Connections`; folder: membership |
+| *(page body blocks)* | Blocks | `page_body` | thinking: `## Extended Reflection`; info: `## Body` |
 
-**Do not** add domain/category/topic/priority/maturity taxonomies in V1.
+**Type vs Status:** Type is the page kind; Status is maturity. Do **not** encode folder/book/article in Status.
+
+**Folder pages (`Type=folder`):** sync creates `Thinking/{Name}/` only (no MOC `.md`). Thinking members listed in Related Information are written under that directory. A page may belong to **at most one** folder; conflicts stay at `Thinking/` root with a sync warning. book/article may be referenced by a folder but remain under `Information/`.
+
+**Do not** add domain/category/topic/priority/maturity taxonomies.
 
 See manual setup: [`NOTION_THINKING_DATABASE_CHECKLIST.md`](NOTION_THINKING_DATABASE_CHECKLIST.md).
 
@@ -328,4 +335,6 @@ No Research Engine, no auto Research Brief generation in V1.
 
 ## 12. Explicit non-goals (V1)
 
-Bidirectional sync · autonomous graph generation · heavy ontology/tags · taxonomy folders under Thinking · auto Research Brief · social/recommendation · custom Notion replacement · second website Thinking database.
+Bidirectional sync · autonomous graph generation · heavy ontology/tags · taxonomy *classification* trees under Thinking · auto Research Brief · social/recommendation · custom Notion replacement · second website Thinking database.
+
+**Allowed exception:** `Type=folder` creates real `Thinking/{Name}/` directories for membership placement (not a Domain/Topic ontology).

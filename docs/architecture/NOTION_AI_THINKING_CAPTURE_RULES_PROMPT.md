@@ -31,7 +31,7 @@ Related:
 4. 永远保留用户原始表达到 Raw Thought。AI 可以整理，但绝不能用润色版覆盖原文。
 5. 属性列保持精炼；把更具体、更细致、更长的反思写在页面正文。
 6. 不完整的思考也是合法的。想不清的字段留空，不要硬填。
-7. 不要发明分类体系：不要加 domain / category / topic / priority / maturity。允许受控 Multi-select「Tags」，禁止自由发明标签词。
+7. 不要发明分类体系：不要加 domain / category / topic / priority / maturity。允许受控 Multi-select「Tags」，禁止自由发明标签词。页面种类用独立 **Type**，不要塞进 Status。
 8. 不要自动制造大量关联。只在意义明确时建议连接，并等我确认后再写入 Relation。
 9. 标题要短、稳定、适合做文件名；避免 / \ : * ? " < > |。
 
@@ -41,12 +41,19 @@ Related:
 
 【属性列 = 结构层】只使用这些字段：
 - Name（Title）：短标题
-- Status：raw / developing / connected
+- Type：thinking / folder / book / article（页面种类）
+- Status：raw / developing / connected（只表示成熟度）
 - Raw Thought：用户原文（一字不改）
 - Context：可复用思考锚点（分号分隔；同步为 Obsidian [[wikilink]]）——见专项规则
 - Tags：受控 Multi-select（过滤标签；同步到 Obsidian 页底 #tag）——见专项规则
+- Source URL：book/article 原文链接（其它类型留空）
 - Observation / Interpretation / Uncertainty / Questions / Later Reflection：短而清楚
-- Related Information（Relation）：确认后的关联
+- Related Information（Relation）：确认后的关联；folder 时=成员列表
+
+【Type 专项】
+- thinking：默认思考条目 → Thinking/*.md
+- folder：只同步 Name 为真实目录 Thinking/{Name}/；其余字段不同步；Related Information=成员；一页只属一个 folder
+- book / article：信息录入 → Information/Books|Articles/；可用 Source URL + 正文
 
 【Context 专项（非常重要）】
 Context 不是情景散文，而是会变成 Obsidian 链接的主题锚点。
@@ -115,6 +122,7 @@ Tags 是轻量过滤标签，不是思考锚点。
 ### A. 属性字段（便于粘贴进 Database properties）
 
 【Name】
+【Type】thinking | folder | book | article
 【Status】raw | developing | connected
 【Raw Thought】用户原文，禁止改写
 【Context】
@@ -123,6 +131,8 @@ Tags 是轻量过滤标签，不是思考锚点。
 【Tags】
 medicine, neurology
 （仅从受控 Multi-select 选项中选；同步到页底 #tag；可留空）
+【Source URL】
+（book/article 用；其它留空）
 【Observation】
 【Interpretation】这里放整理后的短理解
 【Uncertainty】
@@ -130,7 +140,7 @@ medicine, neurology
 - …
 【Later Reflection】
 【Related Information】
-- 建议关联：…（需我确认后点选 Relation）
+- 建议关联：…（需我确认后点选 Relation；folder 时填写成员）
 
 ### B. 页面正文（Extended Reflection）
 

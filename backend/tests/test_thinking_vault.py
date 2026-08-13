@@ -34,6 +34,8 @@ def _page(
     context: str = "",
     tags: list[str] | None = None,
     relations: list[str] | None = None,
+    page_type: str | None = None,
+    source_url: str = "",
     edited: str = "2026-08-12T10:00:00.000Z",
     created: str = "2026-08-12T09:00:00.000Z",
     status: str = "developing",
@@ -45,6 +47,12 @@ def _page(
             "type": "select",
             "select": {"name": status} if status else None,
         },
+        "Type": {
+            "id": "type",
+            "type": "select",
+            "select": {"name": page_type} if page_type else None,
+        },
+        "Source URL": {"id": "url", "type": "url", "url": source_url or None},
         "Raw Thought": {"id": "raw", "type": "rich_text", "rich_text": _rich(raw)},
         "Context": {
             "id": "ctx",
@@ -420,3 +428,129 @@ def test_adapter_with_mocked_notion(db_session, vault_path: Path):
     assert "## Raw Thought" in md
     assert "## Extended Reflection" in md
     assert "错位感" in md
+
+
+def test_default_page_type_is_thinking():
+    page = _page("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa", "Untitled type")
+    obj = normalize_page(page)
+    assert obj.page_type == "thinking"
+    assert obj.is_thinking()
+
+
+def test_legacy_status_folder_becomes_type_folder():
+    page = _page(
+        "folder-legacy",
+        "Neurology",
+        status="folder",
+    )
+    obj = normalize_page(page)
+    assert obj.page_type == "folder"
+    assert obj.status == "connected"
+    assert obj.is_folder()
+
+
+def test_folder_creates_directory_not_markdown(db_session, vault_path: Path):
+    folder = ThinkingObject(
+        title="Neurology",
+        source_id="folder-1",
+        page_type="folder",
+        status="connected",
+        connections=[ThinkingConnection(title="Member Thought", source_id="think-1")],
+    )
+    member = ThinkingObject(
+        title="Member Thought",
+        source_id="think-1",
+        page_type="thinking",
+        raw_thought="inside folder",
+        status="developing",
+    )
+    result = apply_thinking_objects(
+        db_session, [folder, member], vault_path=str(vault_path)
+    )
+    assert result.errors == []
+    assert (vault_path / "Thinking" / "Neurology").is_dir()
+    assert not (vault_path / "Thinking" / "Neurology.md").exists()
+    note = vault_path / "Thinking" / "Neurology" / "Member Thought.md"
+    assert note.is_file()
+    assert "inside folder" in note.read_text(encoding="utf-8")
+
+
+def test_membership_conflict_leaves_thinking_at_root(db_session, vault_path: Path):
+    a = ThinkingObject(
+        title="Folder A",
+        source_id="fa",
+        page_type="folder",
+        connections=[ThinkingConnection(title="Shared", source_id="shared")],
+    )
+    b = ThinkingObject(
+        title="Folder B",
+        source_id="fb",
+        page_type="folder",
+        connections=[ThinkingConnection(title="Shared", source_id="shared")],
+    )
+    shared = ThinkingObject(
+        title="Shared",
+        source_id="shared",
+        page_type="thinking",
+        raw_thought="contested",
+    )
+    result = apply_thinking_objects(
+        db_session, [a, b, shared], vault_path=str(vault_path)
+    )
+    assert any("multiple folders" in w for w in result.warnings)
+    assert (vault_path / "Thinking" / "Shared.md").is_file()
+    assert not (vault_path / "Thinking" / "Folder A" / "Shared.md").exists()
+    assert not (vault_path / "Thinking" / "Folder B" / "Shared.md").exists()
+
+
+def test_book_and_article_write_to_information(db_session, vault_path: Path):
+    book = ThinkingObject(
+        title="In Hell's Kitchen",
+        source_id="book-1",
+        page_type="book",
+        source_url="https://example.com/book",
+        page_body="Reading notes.",
+        tags=["medicine"],
+        status="raw",
+    )
+    article = ThinkingObject(
+        title="Migraine pathways",
+        source_id="art-1",
+        page_type="article",
+        source_url="https://example.com/article",
+        raw_thought="Abstract snippet",
+        status="developing",
+    )
+    result = apply_thinking_objects(
+        db_session, [book, article], vault_path=str(vault_path)
+    )
+    assert result.errors == []
+    book_path = vault_path / "Information" / "Books" / "In Hell's Kitchen.md"
+    art_path = vault_path / "Information" / "Articles" / "Migraine pathways.md"
+    assert book_path.is_file()
+    assert art_path.is_file()
+    book_md = book_path.read_text(encoding="utf-8")
+    assert "type: book" in book_md
+    assert 'url: "https://example.com/book"' in book_md
+    assert "## Body" in book_md
+    assert "Reading notes." in book_md
+    assert "#medicine" in book_md
+    assert "## Raw Thought" not in book_md
+    art_md = art_path.read_text(encoding="utf-8")
+    assert "type: article" in art_md
+    assert "Abstract snippet" in art_md
+
+
+def test_normalize_type_and_source_url():
+    page = _page(
+        "bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb",
+        "Paper note",
+        page_type="article",
+        source_url="https://pubmed.example/1",
+        raw="body",
+    )
+    obj = normalize_page(page)
+    assert obj.page_type == "article"
+    assert obj.source_url == "https://pubmed.example/1"
+    assert "article" in obj.content_fingerprint()
+    assert "https://pubmed.example/1" in obj.content_fingerprint()
