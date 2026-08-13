@@ -64,21 +64,23 @@ vault/Thinking/{Name}.md  (committed by Actions when changed)
 
 GitHub setup: add repository secrets `NOTION_TOKEN` + `NOTION_THINKING_DATABASE_ID`, then enable [`.github/workflows/thinking-sync.yml`](../../.github/workflows/thinking-sync.yml).
 
-### Local Obsidian (iCloud / existing vault) auto-update
+### Local Obsidian (iCloud Thinking valut) — direct Notion sync
 
-GitHub Actions only update the **repo** `vault/`. Your Mac Obsidian vault (e.g. iCloud `Thinking valut`) needs a second hop:
+Preferred local path: **Notion API → your Obsidian vault** (no GitHub hop).
+
+See [`LOCAL_NOTION_OBSIDIAN_SYNC.md`](./LOCAL_NOTION_OBSIDIAN_SYNC.md).
 
 ```text
-GitHub main/vault/Thinking  →  git pull + rsync  →  Obsidian vault/Thinking
+Notion Thinking DB  →  scripts/sync-to-local-obsidian.sh  →  OBSIDIAN_VAULT/Thinking/
 ```
 
 1. Clone once: `git clone https://github.com/CarryLewis/research_brief.git ~/Documents/research_brief`
-2. Manual sync: [`scripts/sync-to-local-obsidian.sh`](../../scripts/sync-to-local-obsidian.sh)  
-   Set `OBSIDIAN_VAULT` to the path shown in Obsidian → Manage vaults.
-3. Auto every 15 min (macOS): copy [`scripts/macos/com.carrylewis.thinking-vault-sync.plist.example`](../../scripts/macos/com.carrylewis.thinking-vault-sync.plist.example) to `~/Library/LaunchAgents/` and `launchctl load` it (instructions inside the file).
-4. Logs: `~/Library/Logs/thinking-vault-sync.log`
+2. Put `NOTION_TOKEN` + `NOTION_THINKING_DATABASE_ID` in `~/Documents/research_brief/.env`
+3. Set `OBSIDIAN_VAULT` to Obsidian → Manage vaults path for **Thinking valut**
+4. Run [`scripts/sync-to-local-obsidian.sh`](../../scripts/sync-to-local-obsidian.sh); optional macOS LaunchAgent every 15 min
+5. GitHub Actions can still update the **repo** `vault/` for backup / Quartz — that is separate from iCloud Obsidian
 
-Do **not** `git init` inside the iCloud Obsidian folder; keep the git clone separate and rsync `Thinking/` only.
+Do **not** `git init` inside the iCloud Obsidian folder.
 
 - Empty properties → section omitted
 - `Related Information` → `## Connections` with `[[Target Name]]` (ordinary notes)
