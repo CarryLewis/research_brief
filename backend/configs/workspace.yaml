@@ -46,7 +46,7 @@ suggestion_threshold: 5
 filter_tag_allowlist: []
 
 limits:
-  max_filter_tags: 3
+  max_filter_tags: 5
   max_connections: 8
   max_key_ideas: 12
 
