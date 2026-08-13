@@ -33,6 +33,14 @@ SQLite sync index is cached across runs; if the cache is cold, sync hydrates ide
 
 Local CLI remains available for debugging.
 
+## Public website (Quartz + Cloudflare)
+
+Publish the Obsidian-style garden from `vault/` with Quartz:
+
+- Code: [`site/`](site/)
+- Guide: [`docs/architecture/QUARTZ_CLOUDFLARE_DEPLOY.md`](docs/architecture/QUARTZ_CLOUDFLARE_DEPLOY.md)
+- Connect the repo to **Cloudflare Pages** (root directory `site`, build `npm ci && npm run build`, output `public`), then bind your existing domain.
+
 ## Quick start
 
 ```bash
