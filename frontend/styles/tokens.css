@@ -1,0 +1,37 @@
+:root {
+  --color-bg: #f6f3ee;
+  --color-surface: #faf8f4;
+  --color-text: #1c1b19;
+  --color-muted: #5c5852;
+  --color-border: #e6e1d8;
+  --color-border-hover: #cfc8bc;
+  --color-accent: #8c4a32;
+
+  --font-ui: -apple-system, BlinkMacSystemFont, "Helvetica Neue", Arial, sans-serif;
+  --font-editorial: "Iowan Old Style", Palatino, "Palatino Linotype", Georgia, serif;
+
+  --space-xs: 0.25rem;
+  --space-sm: 0.5rem;
+  --space-md: 1rem;
+  --space-lg: 2rem;
+  --space-xl: 4rem;
+  --space-2xl: 6rem;
+
+  --radius-sm: 2px;
+  --measure: 38rem;
+
+  --transition-fast: 150ms;
+  --transition-normal: 250ms;
+
+  --page-max: 72rem;
+  --index-width: 11rem;
+  --system-label: 7rem;
+  --focus-ring: 2px solid var(--color-text);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --transition-fast: 0ms;
+    --transition-normal: 0ms;
+  }
+}

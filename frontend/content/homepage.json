@@ -1,0 +1,111 @@
+{
+  "knowledge": [
+    {
+      "kind": "concept",
+      "type": "Concept",
+      "title": "Migraine",
+      "description": "Backbone concept for Nature-portfolio migraine research. Papers remain resources; this note is the thinking hub.",
+      "status": "active",
+      "date": "2026-08-02",
+      "source": "Thinking vault",
+      "related": [
+        "Psychological intervention",
+        "Multisensory integration",
+        "Mismatch negativity"
+      ]
+    },
+    {
+      "kind": "concept",
+      "type": "Concept",
+      "title": "Agent",
+      "description": "Working concept from the AI agents reading archive. The question is which product patterns remain after the noise settles.",
+      "status": "active",
+      "date": "2026-08-02",
+      "source": "Thinking vault",
+      "related": ["LLM", "Design Agent"]
+    },
+    {
+      "kind": "concept",
+      "type": "Concept",
+      "title": "Multisensory integration",
+      "description": "Working hub inside the migraine research: how sensory load, fatigue, and intervention meet.",
+      "status": "active",
+      "date": "2026-08-02",
+      "source": "Thinking vault",
+      "related": ["Migraine", "Mismatch negativity"]
+    }
+  ],
+  "questions": [
+    {
+      "kind": "question",
+      "type": "Question",
+      "title": "Which connectivity patterns best predict episodic migraine severity?",
+      "status": "exploring",
+      "date": "2026-08-02",
+      "related": ["Migraine", "Functional connectivity"]
+    },
+    {
+      "kind": "question",
+      "type": "Question",
+      "title": "How do psychological interventions interact with sensory load and fatigue?",
+      "status": "exploring",
+      "date": "2026-08-02",
+      "related": ["Psychological intervention", "Multisensory integration"]
+    },
+    {
+      "kind": "question",
+      "type": "Question",
+      "title": "Why can a syncope patient look stable and still carry a high-risk ECG signal?",
+      "status": "exploring",
+      "date": "2026-08-13",
+      "related": [
+        "Observation before diagnosis",
+        "Clinical risk sensemaking"
+      ]
+    }
+  ],
+  "projects": [
+    {
+      "kind": "project",
+      "type": "Project",
+      "title": "Nature Migraine Research",
+      "problem": "Nature-portfolio papers on intervention, connectivity, sensory load, and models arrive faster than they can be thought through.",
+      "approach": "Keep papers as resources. Promote concepts only when evidence accumulates. Let questions drive the agenda.",
+      "state": "Active",
+      "date": "2026-08-02",
+      "related": ["Migraine"]
+    },
+    {
+      "kind": "project",
+      "type": "Project",
+      "title": "AI Agents Reading",
+      "problem": "An archive of agent writing needs a durable reading path without turning hype into structure.",
+      "approach": "Resources stay in the lake. Concepts are promoted only when a pattern looks durable.",
+      "state": "Active",
+      "date": "2026-08-02",
+      "related": ["Agent", "LLM", "Design Agent"]
+    }
+  ],
+  "observatory": [
+    {
+      "kind": "knowledge",
+      "type": "Observation",
+      "title": "Apparent stability, ST elevation",
+      "description": "A patient can look well after a brief syncope-like episode and still present widespread ST elevation. The work is risk stratification, not an immediate label.",
+      "status": "open",
+      "date": "2026-08-13",
+      "source": "Clinical encounter",
+      "related": ["Observation before diagnosis"]
+    },
+    {
+      "kind": "knowledge",
+      "type": "Observation",
+      "title": "Distant reading as a trigger",
+      "description": "A system idea arrived while reading Bolaño, not while designing the vault. Distant material can reorganize thinking without being filed as a fact.",
+      "status": "open",
+      "date": "2026-08-13",
+      "source": "Reading",
+      "related": ["Distant knowledge", "Thinking system as processing layer"]
+    }
+  ]
+}

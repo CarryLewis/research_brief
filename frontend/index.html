@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Observatory</title>
+    <meta
+      name="description"
+      content="A quiet personal knowledge environment."
+    />
+    <link rel="stylesheet" href="styles/tokens.css" />
+    <link rel="stylesheet" href="styles/base.css" />
+    <link rel="stylesheet" href="styles/layout.css" />
+    <link rel="stylesheet" href="styles/components.css" />
+  </head>
+  <body>
+    <a class="skip-link" href="#main">Skip to content</a>
+
+    <header class="site-header">
+      <div class="masthead">
+        <p class="masthead-mark">Observatory</p>
+        <p class="masthead-line">A quiet knowledge system</p>
+      </div>
+    </header>
+
+    <div class="page">
+      <nav class="index-nav" aria-label="Index">
+        <span class="index-nav-label" id="index-label">Index</span>
+        <ol aria-labelledby="index-label">
+          <li><a href="#problem">Problem</a></li>
+          <li><a href="#response">Response</a></li>
+          <li><a href="#philosophy">Philosophy</a></li>
+          <li><a href="#system">System</a></li>
+          <li><a href="#knowledge">Knowledge</a></li>
+          <li><a href="#thinking">Thinking</a></li>
+          <li><a href="#projects">Projects</a></li>
+          <li><a href="#observatory">Observatory</a></li>
+          <li><a href="#person">Person</a></li>
+        </ol>
+      </nav>
+
+      <main id="main" class="site-main">
+        <section class="section" id="problem" aria-labelledby="problem-title">
+          <div class="section-inner">
+            <header class="section-header span-12">
+              <p class="section-kicker">01</p>
+              <h2 class="section-title" id="problem-title">The problem</h2>
+            </header>
+            <p class="statement start-2 span-9">
+              Information is becoming abundant. The interfaces that followed
+              became noisier.
+            </p>
+            <div class="prose start-2 span-8">
+              <p>
+                Capture is cheap. Computation is cheap. What is scarce is
+                attention, and the judgment of what deserves it.
+              </p>
+            </div>
+          </div>
+        </section>
+
+        <section class="section" id="response" aria-labelledby="response-title">
+          <div class="section-inner">
+            <header class="section-header span-12">
+              <p class="section-kicker">02</p>
+              <h2 class="section-title" id="response-title">The response</h2>
+            </header>
+            <p class="statement start-2 span-9">
+              Therefore the interface should become quieter.
+            </p>
+            <div class="prose start-2 span-8">
+              <p>
+                Less to look at. More room to think. The page should contain
+                nothing unnecessary, and nothing essential should be missing.
+              </p>
+            </div>
+          </div>
+        </section>
+
+        <section
+          class="section"
+          id="philosophy"
+          aria-labelledby="philosophy-title"
+        >
+          <div class="section-inner">
+            <header class="section-header span-12">
+              <p class="section-kicker">03</p>
+              <h2 class="section-title" id="philosophy-title">
+                The philosophy
+              </h2>
+            </header>
+            <p class="statement start-2 span-9">
+              In the AI era, a personal knowledge system should feel like MUJI:
+              restrained, functional, calm.
+            </p>
+            <div class="prose start-2 span-8">
+              <p>
+                AI increases the amount of information and computation available
+                to one person. The interface should reduce cognitive noise
+                rather than display that power.
+              </p>
+              <p>
+                The purpose of a knowledge system is not to remember everything.
+                It is to decide what is worth noticing.
+              </p>
+            </div>
+          </div>
+        </section>
+
+        <section class="section" id="system" aria-labelledby="system-title">
+          <div class="section-inner">
+            <header class="section-header span-12">
+              <p class="section-kicker">04</p>
+              <h2 class="section-title" id="system-title">The system</h2>
+            </header>
+            <p class="statement statement--quiet start-2 span-8">
+              An intellectual sequence, not a flowchart.
+            </p>
+            <ol class="system-list span-10">
+              <li class="system-step">
+                <span class="system-name">Capture</span>
+                <span class="system-note"
+                  >A page, a case, a sentence worth keeping.</span
+                >
+              </li>
+              <li class="system-step">
+                <span class="system-name">Organize</span>
+                <span class="system-note"
+                  >Place it where it can be found without taxonomy theater.</span
+                >
+              </li>
+              <li class="system-step">
+                <span class="system-name">Connect</span>
+                <span class="system-note"
+                  >Name the few relationships that change understanding.</span
+                >
+              </li>
+              <li class="system-step">
+                <span class="system-name">Think</span>
+                <span class="system-note"
+                  >Questions, doubts, and unfinished notes stay visible.</span
+                >
+              </li>
+              <li class="system-step">
+                <span class="system-name">Distill</span>
+                <span class="system-note"
+                  >Keep the signal. Leave the rest behind.</span
+                >
+              </li>
+              <li class="system-step">
+                <span class="system-name">Publish</span>
+                <span class="system-note"
+                  >Show only what is ready to be seen.</span
+                >
+              </li>
+            </ol>
+            <p class="prose start-2 span-8">
+              AI may help organize. Humans decide what matters.
+            </p>
+          </div>
+        </section>
+
+        <section
+          class="section"
+          id="knowledge"
+          aria-labelledby="knowledge-title"
+        >
+          <div class="section-inner">
+            <header class="section-header span-12">
+              <p class="section-kicker">05</p>
+              <h2 class="section-title" id="knowledge-title">Knowledge</h2>
+            </header>
+            <p class="statement statement--quiet start-2 span-8">
+              What is currently being held.
+            </p>
+            <div
+              class="object-grid span-12 objects-slot"
+              id="knowledge-objects"
+            ></div>
+          </div>
+        </section>
+
+        <section class="section" id="thinking" aria-labelledby="thinking-title">
+          <div class="section-inner">
+            <header class="section-header span-12">
+              <p class="section-kicker">06</p>
+              <h2 class="section-title" id="thinking-title">Thinking</h2>
+            </header>
+            <p class="statement statement--quiet start-2 span-8">
+              Questions that are still alive.
+            </p>
+            <div
+              class="object-grid span-12 objects-slot"
+              id="thinking-objects"
+            ></div>
+          </div>
+        </section>
+
+        <section class="section" id="projects" aria-labelledby="projects-title">
+          <div class="section-inner">
+            <header class="section-header span-12">
+              <p class="section-kicker">07</p>
+              <h2 class="section-title" id="projects-title">Projects</h2>
+            </header>
+            <p class="statement statement--quiet start-2 span-8">
+              Knowledge becoming work.
+            </p>
+            <div
+              class="object-grid span-12 objects-slot"
+              id="project-objects"
+            ></div>
+          </div>
+        </section>
+
+        <section
+          class="section"
+          id="observatory"
+          aria-labelledby="observatory-title"
+        >
+          <div class="section-inner">
+            <header class="section-header span-12">
+              <p class="section-kicker">08</p>
+              <h2 class="section-title" id="observatory-title">Observatory</h2>
+            </header>
+            <p class="statement statement--quiet start-2 span-8">
+              Signals worth paying attention to. Not a feed.
+            </p>
+            <div
+              class="object-grid span-12 objects-slot"
+              id="observatory-objects"
+            ></div>
+          </div>
+        </section>
+
+        <section class="section" id="person" aria-labelledby="person-title">
+          <div class="section-inner">
+            <header class="section-header span-12">
+              <p class="section-kicker">09</p>
+              <h2 class="section-title" id="person-title">The person</h2>
+            </header>
+            <p class="statement start-2 span-9">
+              This is a personal knowledge environment.
+            </p>
+            <div class="prose start-2 span-8">
+              <p>
+                Notes are written elsewhere. These pages show only what is worth
+                noticing in public. Replace this paragraph when a first-person
+                introduction is ready.
+              </p>
+            </div>
+          </div>
+        </section>
+      </main>
+    </div>
+
+    <footer class="site-footer">
+      <p class="footer-inner">Less interface. More thinking.</p>
+    </footer>
+
+    <script src="scripts/main.js" defer></script>
+  </body>
+</html>
