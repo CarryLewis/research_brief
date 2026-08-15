@@ -158,8 +158,8 @@
   font-size: 0.8125rem;
 }
 
-.meta span::after {
-  content: none;
+.meta span:not(:last-child)::after {
+  content: " ·";
 }
 
 .relations {

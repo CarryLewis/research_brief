@@ -12,10 +12,18 @@ function text(tag, className, value) {
   return node;
 }
 
+function formatMeta(value) {
+  if (!value) return "";
+  if (/^\d{4}-\d{2}-\d{2}/.test(value)) return value;
+  return value.charAt(0).toUpperCase() + value.slice(1);
+}
+
 function metaRow(item) {
   const row = document.createElement("p");
   row.className = "meta";
-  const parts = [item.status, item.date, item.source].filter(Boolean);
+  const parts = [item.status, item.date, item.source]
+    .filter(Boolean)
+    .map(formatMeta);
   parts.forEach((part) => {
     const span = document.createElement("span");
     span.textContent = part;
