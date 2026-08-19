@@ -1,0 +1,30 @@
+---
+description: MUJI knowledge-environment rules for the public frontend
+globs: frontend/**
+alwaysApply: false
+---
+
+# Frontend design constitution
+
+This rule applies when changing files under `frontend/`. The visual source of truth is `docs/DESIGN_SYSTEM.md`.
+
+## Behavior
+
+1. Do not redesign the entire project when asked to modify one component.
+2. Preserve existing working functionality. Do not rewrite the FastAPI backend, the browser extension, Quartz in `site/`, or the Obsidian vault to satisfy a frontend change.
+3. Before changing architecture, explain why the change is necessary.
+4. Do not introduce dependencies unless they provide meaningful value. Prefer HTML, CSS, and minimal JS.
+5. Do not create visual features simply because they are technically possible.
+6. When adding a component, first identify its cognitive purpose. If that purpose is unclear, do not add it.
+7. When modifying the homepage, update the actual visible UI rather than only modifying data structures.
+8. Never leave the site in a state where `frontend/content/homepage.json` changes but the visible objects do not reflect the change.
+9. Prefer incremental changes.
+10. If uncertain about visual direction, preserve the current design language rather than inventing a new one.
+
+## Visual constraints
+
+- Paper, graphite, ink. One accent color. Tokens live in `frontend/styles/tokens.css`.
+- No gradients, glassmorphism, neon, glow, heavy shadows, or decorative animation.
+- No dashboards, KPI tiles, fake metrics, AI chat, or avatars.
+- Borders over shadows. Quiet hover (opacity, border, background; 150–250ms).
+- Honor `prefers-reduced-motion`. Keep semantic HTML and visible focus states.
