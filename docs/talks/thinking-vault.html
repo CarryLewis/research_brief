@@ -1,0 +1,655 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Thinking Vault · Notion 输入 / Obsidian 记忆</title>
+  <style>
+    :root {
+      --bg: #181818;
+      --chrome: #141414;
+      --text: #e4e4e4;
+      --muted: rgba(228, 228, 228, 0.58);
+      --faint: rgba(228, 228, 228, 0.38);
+      --fill: rgba(228, 228, 228, 0.07);
+      --fill-strong: rgba(228, 228, 228, 0.12);
+      --stroke: rgba(228, 228, 228, 0.18);
+      --accent: #599ce7;
+      --ok: #3fa266;
+      --warn: #f1b467;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html, body {
+      height: 100%;
+      background: var(--bg);
+      color: var(--text);
+      font-family: "PingFang SC", "Noto Sans SC", "Source Han Sans SC",
+        system-ui, sans-serif;
+      overflow: hidden;
+    }
+
+    #deck {
+      height: 100%;
+      position: relative;
+    }
+
+    .slide {
+      display: none;
+      height: 100%;
+      padding: 7vh 8vw 10vh;
+      flex-direction: column;
+      justify-content: center;
+      gap: 2.4rem;
+    }
+
+    .slide.is-on {
+      display: flex;
+    }
+
+    .kicker {
+      font-size: 0.95rem;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--accent);
+      font-weight: 500;
+    }
+
+    h1 {
+      font-size: clamp(2.4rem, 5vw, 3.6rem);
+      font-weight: 590;
+      line-height: 1.2;
+      max-width: 18em;
+    }
+
+    h2 {
+      font-size: clamp(1.8rem, 3.6vw, 2.6rem);
+      font-weight: 590;
+      line-height: 1.25;
+      max-width: 22em;
+    }
+
+    .lede {
+      font-size: clamp(1.15rem, 2vw, 1.45rem);
+      line-height: 1.55;
+      color: var(--muted);
+      max-width: 38em;
+    }
+
+    .claim {
+      font-size: clamp(1.35rem, 2.4vw, 1.85rem);
+      line-height: 1.45;
+      max-width: 22em;
+    }
+
+    .loop {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.55rem 0.4rem;
+      align-items: center;
+      max-width: 56rem;
+    }
+
+    .loop span {
+      background: var(--fill-strong);
+      border: 1px solid var(--stroke);
+      border-radius: 6px;
+      padding: 0.45rem 0.75rem;
+      font-size: 1.05rem;
+    }
+
+    .loop i {
+      color: var(--faint);
+      font-style: normal;
+      font-size: 1.1rem;
+    }
+
+    .grid-2, .grid-4 {
+      display: grid;
+      gap: 1.1rem;
+    }
+
+    .grid-2 { grid-template-columns: 1fr 1fr; }
+    .grid-4 { grid-template-columns: 1fr 1fr; }
+
+    .panel {
+      background: var(--fill);
+      border: 1px solid var(--stroke);
+      border-radius: 8px;
+      padding: 1.25rem 1.4rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.55rem;
+    }
+
+    .panel h3 {
+      font-size: 1.15rem;
+      font-weight: 590;
+    }
+
+    .panel p, .note, li {
+      font-size: 1.05rem;
+      line-height: 1.5;
+      color: var(--muted);
+    }
+
+    .panel .tag {
+      font-size: 0.78rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--accent);
+    }
+
+    ul.plain {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 0.9rem;
+      max-width: 40em;
+    }
+
+    ul.plain li {
+      font-size: 1.2rem;
+      color: var(--text);
+      padding-left: 1.1rem;
+      border-left: 2px solid var(--stroke);
+    }
+
+    ul.plain li strong { font-weight: 590; }
+
+    ul.refuse li {
+      color: var(--muted);
+    }
+
+    ul.refuse li em {
+      font-style: normal;
+      color: var(--text);
+    }
+
+    .flow {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .flow .box {
+      background: var(--fill-strong);
+      border: 1px solid var(--stroke);
+      border-radius: 6px;
+      padding: 0.7rem 1rem;
+      font-size: 1.05rem;
+      min-width: 7.5rem;
+      text-align: center;
+    }
+
+    .flow .box.accent {
+      border-color: var(--accent);
+    }
+
+    .flow .arrow {
+      color: var(--faint);
+      font-size: 1.2rem;
+    }
+
+    table.compact {
+      border-collapse: collapse;
+      width: min(100%, 52rem);
+      font-size: 1.05rem;
+    }
+
+    table.compact th,
+    table.compact td {
+      text-align: left;
+      padding: 0.7rem 0.85rem;
+      border-bottom: 1px solid var(--stroke);
+      vertical-align: top;
+    }
+
+    table.compact th {
+      color: var(--faint);
+      font-weight: 500;
+      font-size: 0.85rem;
+      letter-spacing: 0.04em;
+    }
+
+    table.compact td:first-child {
+      color: var(--text);
+      font-weight: 500;
+      white-space: nowrap;
+    }
+
+    table.compact td { color: var(--muted); }
+
+    code {
+      font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+      font-size: 0.92em;
+      background: var(--fill-strong);
+      padding: 0.08em 0.35em;
+      border-radius: 4px;
+    }
+
+    .hint {
+      font-size: 0.95rem;
+      color: var(--faint);
+    }
+
+    .hud {
+      position: fixed;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      height: 44px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 8vw;
+      color: var(--faint);
+      font-size: 0.85rem;
+      pointer-events: none;
+    }
+
+    .bar {
+      position: fixed;
+      top: 0;
+      left: 0;
+      height: 2px;
+      background: var(--accent);
+      width: 0;
+    }
+
+    @media (max-width: 820px) {
+      .grid-2, .grid-4 { grid-template-columns: 1fr; }
+      .slide { padding: 6vh 6vw 12vh; gap: 1.6rem; }
+      table.compact td:first-child { white-space: normal; }
+    }
+  </style>
+</head>
+<body>
+  <div class="bar" id="bar"></div>
+  <main id="deck">
+
+    <!-- 1 -->
+    <section class="slide" data-act="开场">
+      <p class="kicker">Thinking Vault</p>
+      <h1>Notion 负责输入。<br>Obsidian 负责记住并连起来。</h1>
+      <p class="lede">一份投屏讲解：先讲每天怎么想，再讲系统为什么这样切。技术合同在后半，不在开场。</p>
+      <p class="hint">方向键或空格翻页</p>
+    </section>
+
+    <!-- 2 -->
+    <section class="slide" data-act="开场">
+      <p class="kicker">主线</p>
+      <h2>先记住这条闭环，后面每一页都围着它转。</h2>
+      <div class="loop">
+        <span>体验</span><i>→</i>
+        <span>说话</span><i>→</i>
+        <span>AI 帮想</span><i>→</i>
+        <span>Notion 列记住</span><i>→</i>
+        <span>Obsidian 连接</span><i>→</i>
+        <span>图长大</span><i>→</i>
+        <span>研究以后再说</span>
+      </div>
+      <p class="lede">这不是 Research Engine，也不是双向同步。V1 停在「连接发生、图开始长」。</p>
+    </section>
+
+    <!-- 3 -->
+    <section class="slide" data-act="理念">
+      <p class="kicker">Act 1 · 为什么这样切</p>
+      <h2>旧做法把两件事绑在同一套产品里。</h2>
+      <p class="claim">收藏阅读，和思考操作系统，不是同一条路。</p>
+      <p class="lede">Obsidian 一度同时当仓库、投影面、思考本。文件夹越来越多，日常路径越来越碎。根因不是缺功能，是目标叠在一起。</p>
+    </section>
+
+    <!-- 4 -->
+    <section class="slide" data-act="理念">
+      <p class="kicker">Act 1 · 两条流水线</p>
+      <h2>信息归信息。思考归思考。禁止合流。</h2>
+      <div class="grid-2">
+        <div class="panel">
+          <p class="tag">Information</p>
+          <h3>世界记忆</h3>
+          <p>网页、邮件、书目走 Library / Content Lake。那是外部信息的采集与阅读库。</p>
+        </div>
+        <div class="panel">
+          <p class="tag">Thinking</p>
+          <h3>自己的想法</h3>
+          <p>在 Notion Thinking Database 里捕捉、澄清；单向同步进 Obsidian。不经过 collect，也不进 Lake。</p>
+        </div>
+      </div>
+      <p class="lede">两条线只在 Wikilink 相遇。把 Notion 接进阅读采集管线，是明确禁止的。</p>
+    </section>
+
+    <!-- 5 -->
+    <section class="slide" data-act="理念">
+      <p class="kicker">Act 1 · 四层角色</p>
+      <h2>每个表面只做一件它最适合的事。</h2>
+      <div class="grid-4">
+        <div class="panel">
+          <p class="tag">Notion</p>
+          <h3>输入 / 交互</h3>
+          <p>手机捕捉、对话澄清、属性列、轻量状态、Relation。</p>
+        </div>
+        <div class="panel">
+          <p class="tag">Obsidian</p>
+          <h3>认知图 / 记忆</h3>
+          <p>把结构化思考落成笔记。有意义的 <code>[[wikilink]]</code> 就是图。</p>
+        </div>
+        <div class="panel">
+          <p class="tag">Website</p>
+          <h3>以后才呈现</h3>
+          <p>公开镜像可以消费 Obsidian 派生内容。它不是思考编辑器。</p>
+        </div>
+        <div class="panel">
+          <p class="tag">Content Lake</p>
+          <h3>只存外部信息</h3>
+          <p>原始字节的记忆层。永不进入 Thinking 管线。</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- 6 -->
+    <section class="slide" data-act="理念">
+      <p class="kicker">Act 1 · 明确拒绝</p>
+      <h2>V1 靠少做，才站得住。</h2>
+      <ul class="plain refuse">
+        <li><em>不做双向同步。</em> Obsidian 不是编辑权威，改完不会写回 Notion。</li>
+        <li><em>不用文件夹当结构。</em> Thinking 扁平铺开，用链接，不用分类目录。</li>
+        <li><em>不自动出 Research Brief。</em> 研究自动化留给以后，现在只让连接发生。</li>
+        <li><em>不用第三方同步 App。</em> 传输是自托管后端：Notion API 进来，Writer 写出 Markdown。</li>
+      </ul>
+    </section>
+
+    <!-- 7 -->
+    <section class="slide" data-act="场景">
+      <p class="kicker">Act 2 · 场面 1 · 捕捉</p>
+      <h2>想法出现的那一刻，先写进 Notion。</h2>
+      <p class="claim">Raw Thought 是原始句子。AI 不得在你没说「替换」时改掉它。</p>
+      <p class="lede">手机或电脑都可以。这一步只要求留下那句还没被整理的话。整理是下一场，不是这一场。</p>
+    </section>
+
+    <!-- 8 -->
+    <section class="slide" data-act="场景">
+      <p class="kicker">Act 2 · 场面 2 · 澄清</p>
+      <h2>对话是短暂的。列才是记住的东西。</h2>
+      <p class="lede">和 Notion AI 把意思谈清楚，可以。谈完以后，把 Context、Observation、Questions 等列填上。没有填进列的内容，系统不当作结构化思考。</p>
+      <p class="lede">正文可以继续写更长的 Extended Reflection。它是附录，不是合同。</p>
+    </section>
+
+    <!-- 9 -->
+    <section class="slide" data-act="场景">
+      <p class="kicker">Act 2 · 场面 3 · 状态</p>
+      <h2>线上库用三个词，描述想法走到哪了。</h2>
+      <div class="flow">
+        <div class="box">raw<br><span class="hint">原始捕捉</span></div>
+        <span class="arrow">→</span>
+        <div class="box">developing<br><span class="hint">澄清中</span></div>
+        <span class="arrow">→</span>
+        <div class="box accent">connected<br><span class="hint">已建立连接</span></div>
+      </div>
+      <p class="lede">这是你每天看到的 Status。工程清单里的 Draft / Active / Archived 仍然兼容，但讲工作流时用上面三个词。</p>
+    </section>
+
+    <!-- 10 -->
+    <section class="slide" data-act="场景">
+      <p class="kicker">Act 2 · 场面 4 · 同步</p>
+      <h2>填好列之后，一键打到 Thinking valut。</h2>
+      <p class="claim">macOS 快捷指令跑同步。Clash 开着或关着都可以。</p>
+      <p class="lede">目标库是 iCloud 里的 <code>Thinking valut</code>。不要写到 Documents 父目录，也不要写到另一个 <code>Thinking/</code> 文件夹。同步是单向覆盖：Notion 是这次写入的权威。</p>
+    </section>
+
+    <!-- 11 -->
+    <section class="slide" data-act="场景">
+      <p class="kicker">Act 2 · 场面 5 · 连接</p>
+      <h2>打开 Obsidian，跟着 <code>[[wikilink]]</code> 走。</h2>
+      <p class="claim">图是连接的结果，不是另做一套引擎。</p>
+      <p class="lede">Related Information 指向其他思考页，同步后出现在 Connections。Context 里的概念也会拆成链接。V1 成功标准是这些链接还在，而不是自动长出一张认知图。</p>
+    </section>
+
+    <!-- 12 -->
+    <section class="slide" data-act="工作流">
+      <p class="kicker">Act 3 · 操作协议</p>
+      <h2>三层东西，不要混成一层。</h2>
+      <div class="grid-2">
+        <div class="panel">
+          <p class="tag">短暂</p>
+          <h3>对话</h3>
+          <p>用来想清楚。聊完可以丢掉，不必当档案。</p>
+        </div>
+        <div class="panel">
+          <p class="tag">结构化记录</p>
+          <h3>属性列</h3>
+          <p>Name、Raw Thought、Context、Questions……这才是同步合同。</p>
+        </div>
+        <div class="panel">
+          <p class="tag">补充</p>
+          <h3>页面正文</h3>
+          <p>更长的 Extended Reflection、嵌套子页。同步时跟在属性章节后面。</p>
+        </div>
+        <div class="panel">
+          <p class="tag">记忆</p>
+          <h3>Obsidian 笔记</h3>
+          <p>按 <code>source_id</code> 写成一篇 Markdown。空列不生成空章节。</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- 13 -->
+    <section class="slide" data-act="工作流">
+      <p class="kicker">Act 3 · 同步前最低条件</p>
+      <h2>至少有名字，和那句原始想法。</h2>
+      <ul class="plain">
+        <li><strong>Name</strong> 决定标题和文件名。</li>
+        <li><strong>Raw Thought</strong> 决定这则思考是否真的存在。</li>
+        <li>其他列按需填。空的就省略，不要为了「完整」堆空章节。</li>
+        <li>没填列就去同步，Obsidian 不会替你把对话变成结构。</li>
+      </ul>
+    </section>
+
+    <!-- 14 -->
+    <section class="slide" data-act="工作流">
+      <p class="kicker">Act 3 · Context 怎么写</p>
+      <h2>只分号。一项一个概念。</h2>
+      <table class="compact">
+        <thead>
+          <tr><th>Notion Context</th><th>Obsidian</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><code>临床沟通；夜班；眩晕</code></td>
+            <td><code>[[临床沟通]]</code>　<code>[[夜班]]</code>　<code>[[眩晕]]</code></td>
+          </tr>
+          <tr>
+            <td><code>vertigo; dizziness</code></td>
+            <td><code>[[vertigo]]</code>　<code>[[dizziness]]</code></td>
+          </tr>
+        </tbody>
+      </table>
+      <p class="lede">不用逗号、顿号、竖线当分隔。已有 <code>[[…]]</code> 的内部不拆。给 AI 的口令：短目标、中文分号、不要整句。</p>
+    </section>
+
+    <!-- 15 -->
+    <section class="slide" data-act="工作流">
+      <p class="kicker">Act 3 · 怎样算做成了</p>
+      <h2>打开 vault，应该看见同一则思考，而不是一份副本。</h2>
+      <ul class="plain">
+        <li>Notion 里填好的 Raw Thought，在笔记里还是那句话。</li>
+        <li>内页写的长反思，跟在属性章节后面，没有丢。</li>
+        <li>再同步一次，还是那一个文件。</li>
+        <li>改了标题，文件名跟着改，身份仍是同一页。</li>
+        <li>关联页变成 Connections 里的 <code>[[链接]]</code>。</li>
+      </ul>
+    </section>
+
+    <!-- 16 -->
+    <section class="slide" data-act="技术">
+      <p class="kicker">Act 4 · 管线</p>
+      <h2>人走完协议之后，机器只做这一条。</h2>
+      <div class="flow">
+        <div class="box">Notion API</div>
+        <span class="arrow">→</span>
+        <div class="box">Adapter</div>
+        <span class="arrow">→</span>
+        <div class="box">Normalizer</div>
+        <span class="arrow">→</span>
+        <div class="box accent">Canonical</div>
+        <span class="arrow">→</span>
+        <div class="box">Writer</div>
+        <span class="arrow">→</span>
+        <div class="box">Thinking/*.md</div>
+        <span class="arrow">→</span>
+        <div class="box accent">Wikilink 图</div>
+      </div>
+      <p class="lede">Information 笔记从另一侧进来，只在最后的图与 Thinking 汇合。细节在设计 canvas，投屏只留骨架。</p>
+    </section>
+
+    <!-- 17 -->
+    <section class="slide" data-act="技术">
+      <p class="kicker">Act 4 · 合同摘录</p>
+      <h2>投屏只看会改行为的列。</h2>
+      <table class="compact">
+        <thead>
+          <tr><th>Notion</th><th>同步成什么</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>Name</td><td>标题，以及文件名</td></tr>
+          <tr><td>Raw Thought</td><td><code>## Raw Thought</code>。已有内容不得默改。</td></tr>
+          <tr><td>Context</td><td>分号拆成多个 <code>[[概念]]</code></td></tr>
+          <tr><td>Related Information</td><td><code>## Connections</code> 下的 <code>[[Title]]</code></td></tr>
+          <tr><td>Status</td><td>只进索引。Draft 跳过；Archived 软归档。</td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <!-- 18 -->
+    <section class="slide" data-act="技术">
+      <p class="kicker">Act 4 · 身份与删除</p>
+      <h2>文件名可以变。<code>source_id</code> 不能变。</h2>
+      <ul class="plain">
+        <li>身份是 Notion page id，写在 frontmatter，不是用户要填的列。</li>
+        <li>再次同步按这个 id 覆盖。同名不会生出第二篇。</li>
+        <li>改标题：文件重命名，id 留下。</li>
+        <li>删掉远端页：软归档到 Archive，永不硬删思考史。</li>
+      </ul>
+    </section>
+
+    <!-- 19 -->
+    <section class="slide" data-act="技术">
+      <p class="kicker">Act 4 · 模块缝</p>
+      <h2>谁也不准知道不该知道的形状。</h2>
+      <table class="compact">
+        <thead>
+          <tr><th>模块</th><th>知道</th><th>不知道</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>Adapter</td><td>Notion 属性袋和块树</td><td>Markdown 长什么样</td></tr>
+          <tr><td>Normalizer</td><td>如何变成 Canonical</td><td>网络 I/O</td></tr>
+          <tr><td>Writer</td><td>按 id 写、改名、归档</td><td>Notion API 类型</td></tr>
+        </tbody>
+      </table>
+      <p class="lede">合同缝在 Normalizer。这是单向同步能保持可测的原因。</p>
+    </section>
+
+    <!-- 20 -->
+    <section class="slide" data-act="技术">
+      <p class="kicker">Act 4 · 现状</p>
+      <h2>同步已经能跑。图和网站还没当产品做。</h2>
+      <div class="grid-2">
+        <div class="panel">
+          <p class="tag">已完成</p>
+          <h3>Phase 1–5</h3>
+          <p>审计、Canonical 模型、Notion Adapter、Obsidian Writer、Sync Engine（CLI + API，幂等，软归档）。</p>
+        </div>
+        <div class="panel">
+          <p class="tag">延期</p>
+          <h3>Phase 6–7</h3>
+          <p>Graph 只保证 Wikilink 还在。Website 以后消费派生内容。自动研究不在 V1。</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- 21 -->
+    <section class="slide" data-act="收束">
+      <p class="kicker">收束</p>
+      <h2>三句就够把系统设计讲完。</h2>
+      <ul class="plain">
+        <li><strong>Notion 输入。</strong> 捕捉、澄清、把想法放进列。</li>
+        <li><strong>Obsidian 记忆。</strong> 笔记是认知图的材料，链接是图。</li>
+        <li><strong>同步只朝一个方向。</strong> 按 <code>source_id</code> 覆盖，思考史只软归档。</li>
+      </ul>
+    </section>
+
+    <!-- 22 -->
+    <section class="slide" data-act="收束">
+      <p class="kicker">现在不做</p>
+      <h2>下一步如果要讲，只讲链接还在。</h2>
+      <p class="lede">不在这里展开 Knowledge OS、生命周期、自动 Brief。那些是另一套叙事。Thinking Vault 的下一寸，是让 Wikilink 在同步之后仍然活着——图会因此自己长出来。</p>
+      <p class="hint">会后对照：设计 canvas · THINKING_VAULT_ARCHITECTURE.md</p>
+    </section>
+
+  </main>
+  <div class="hud">
+    <span id="act"></span>
+    <span id="pos"></span>
+  </div>
+  <script>
+    (function () {
+      var slides = Array.prototype.slice.call(document.querySelectorAll(".slide"));
+      var total = slides.length;
+      var i = 0;
+      var bar = document.getElementById("bar");
+      var act = document.getElementById("act");
+      var pos = document.getElementById("pos");
+
+      function readHash() {
+        var n = parseInt(location.hash.replace("#", ""), 10);
+        if (n >= 1 && n <= total) i = n - 1;
+      }
+
+      function paint() {
+        slides.forEach(function (s, k) {
+          s.classList.toggle("is-on", k === i);
+        });
+        act.textContent = slides[i].getAttribute("data-act") || "";
+        pos.textContent = (i + 1) + " / " + total;
+        bar.style.width = ((i + 1) / total) * 100 + "%";
+        if (location.hash !== "#" + (i + 1)) {
+          history.replaceState(null, "", "#" + (i + 1));
+        }
+      }
+
+      function go(d) {
+        i = Math.max(0, Math.min(total - 1, i + d));
+        paint();
+      }
+
+      readHash();
+      paint();
+
+      window.addEventListener("hashchange", function () {
+        readHash();
+        paint();
+      });
+
+      document.addEventListener("keydown", function (e) {
+        if (e.key === "ArrowRight" || e.key === " " || e.key === "PageDown") {
+          e.preventDefault();
+          go(1);
+        } else if (e.key === "ArrowLeft" || e.key === "Backspace" || e.key === "PageUp") {
+          e.preventDefault();
+          go(-1);
+        } else if (e.key === "Home") {
+          e.preventDefault();
+          i = 0;
+          paint();
+        } else if (e.key === "End") {
+          e.preventDefault();
+          i = total - 1;
+          paint();
+        }
+      });
+    })();
+  </script>
+</body>
+</html>
