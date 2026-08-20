@@ -1,8 +1,7 @@
 {
   "alwaysUpdateLinks": true,
   "newFileLocation": "folder",
-  "newFileFolderPath": "Reflections",
-  "attachmentFolderPath": "90_Meta/Attachments",
+  "newFileFolderPath": "Thinking",
   "showFrontmatter": true,
   "strictLineBreaks": false,
   "readableLineLength": true,

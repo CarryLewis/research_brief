@@ -1,14 +1,7 @@
-fastapi>=0.115.0
-uvicorn[standard]>=0.32.0
 sqlalchemy>=2.0.36
 pydantic>=2.10.0
 pydantic-settings>=2.6.0
-python-multipart>=0.0.17
 httpx>=0.28.0
-feedparser>=6.0.11
 pyyaml>=6.0.2
 python-dotenv>=1.0.1
-email-validator>=2.2.0
-readability-lxml>=0.8.1
-markdownify>=0.14.1
 pytest>=8.0.0

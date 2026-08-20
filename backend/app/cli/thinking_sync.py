@@ -43,9 +43,9 @@ def main(argv: list[str] | None = None) -> int:
             print(json.dumps(thinking_vault_svc.last_sync_status(db), ensure_ascii=False, indent=2))
             return 0
 
-        vault = (args.vault or settings.default_vault_path or "").strip()
+        vault = (args.vault or settings.resolved_thinking_vault_path or "").strip()
         if not vault:
-            print("vault path required (--vault or DEFAULT_VAULT_PATH)", file=sys.stderr)
+            print("vault path required (--vault or THINKING_VAULT_PATH)", file=sys.stderr)
             return 2
         token = (settings.notion_token or "").strip()
         database_id = (settings.notion_thinking_database_id or "").strip()

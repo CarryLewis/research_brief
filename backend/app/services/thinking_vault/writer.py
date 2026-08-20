@@ -17,7 +17,7 @@ from pathlib import Path
 
 import yaml
 
-from ...utils import content_hash, workspace_config_dict
+from ...utils import content_hash
 from .model import PAGE_BODY_HEADING, SECTION_FIELDS, SECTION_HEADINGS, ThinkingObject
 
 logger = logging.getLogger(__name__)
@@ -35,7 +35,7 @@ class WriteResult:
 
 
 def thinking_vault_cfg(cfg: dict | None = None) -> dict:
-    cfg = cfg or workspace_config_dict()
+    cfg = cfg or {}
     tv = dict(cfg.get("thinking_vault") or {})
     folders = cfg.get("folders") or {}
     tv.setdefault("folder", folders.get("thinking") or "Thinking")

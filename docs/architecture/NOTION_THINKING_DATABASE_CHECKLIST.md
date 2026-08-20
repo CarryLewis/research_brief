@@ -1,7 +1,7 @@
 # Notion Thinking Database — Manual Setup Checklist
 
 **Purpose:** Create the Notion database that Thinking Vault V1 syncs from.  
-**Contract:** Property columns are the content source of truth. Page body is not synced in V1.
+**Contract:** Property columns are the content source of truth. Page body syncs as `## Extended Reflection`.
 
 Do **not** auto-create this schema from the API in V1 — set it up once by hand.
 
@@ -10,22 +10,23 @@ Do **not** auto-create this schema from the API in V1 — set it up once by hand
 ## 1. Create the database
 
 1. In Notion, create a full-page database named e.g. **Thinking**.
-2. Copy the database id from the URL (`notion.so/.../<database_id>?v=...`) into `.env` as `NOTION_THINKING_DATABASE_ID` (32 hex chars; dashes optional).
-3. Create an internal integration at [Notion My Integrations](https://www.notion.so/my-integrations), copy the secret into `NOTION_TOKEN`.
-4. Share the Thinking database (and any related Information DB if used) with that integration.
+2. Copy the database id from the URL (`notion.so/.../<database_id>?v=...`) into the GitHub Actions secret `NOTION_THINKING_DATABASE_ID` (32 hex chars; dashes optional).
+3. Create an internal integration at [Notion My Integrations](https://www.notion.so/my-integrations), copy the secret into the GitHub Actions secret `NOTION_TOKEN`.
+4. Share the Thinking database with that integration.
 
 ---
 
 ## 2. Required properties (exact default names)
 
-Use these **display names** unless you override `thinking_vault.property_names` in [`backend/configs/workspace.yaml`](../../backend/configs/workspace.yaml).
+Use these **display names**. Overrides go in `DEFAULT_PROPERTY_NAMES` in [`backend/app/services/thinking_vault/normalizer.py`](../../backend/app/services/thinking_vault/normalizer.py).
 
 | Property name | Notion type | Notes |
 |---------------|-------------|-------|
 | Name | Title | Default title property (rename to `Name` if needed) |
 | Created | Created time | Built-in or Created time property |
 | Updated | Last edited time | Built-in last edited time |
-| Status | Select | Options: `raw`, `developing`, `connected`, `folder` |
+| Status | Select | Options: `raw`, `developing`, `connected` (maturity only) |
+| Type | Select | Options: `thinking`, `folder`, `book`, `article`. `folder` creates a real directory. `book`/`article` are parsed but not written. |
 | Raw Thought | Rich text | Original expression — never overwritten by AI polish |
 | Context | Rich text | Optional |
 | Observation | Rich text | Optional |
@@ -56,8 +57,8 @@ The database is an **index of thinking slots**, not an ontology.
 ```text
 Fill property columns on a Thinking page
         ↓
-GitHub Actions (hourly / workflow_dispatch)
-  or: POST /api/thinking/sync  /  python -m app.cli.thinking_sync
+GitHub Actions (every 6 hours / workflow_dispatch)
+  or debug: python -m app.cli.thinking_sync --vault ../vault
         ↓
 vault/Thinking/{Name}.md  (committed by Actions when changed)
 ```

@@ -14,12 +14,9 @@ if str(BACKEND_ROOT) not in sys.path:
 
 @pytest.fixture
 def db_session(tmp_path, monkeypatch):
-    data = tmp_path / "data"
-    lake = tmp_path / "content_lake"
+    data = tmp_path / "state"
     data.mkdir()
-    lake.mkdir()
     monkeypatch.setenv("DATA_DIR", str(data))
-    monkeypatch.setenv("CONTENT_LAKE_DIR", str(lake))
 
     from app.config import get_settings
 

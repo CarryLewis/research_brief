@@ -4,13 +4,15 @@ from __future__ import annotations
 
 from typing import Any
 
-from ..knowledge import normalize_filter_tags
+from ...utils import sanitize_filename
 from .model import ThinkingConnection, ThinkingObject
 
 
 DEFAULT_PROPERTY_NAMES: dict[str, str] = {
     "title": "Name",
     "status": "Status",
+    "page_type": "Type",
+    "source_url": "Source URL",
     "raw_thought": "Raw Thought",
     "context": "Context",
     "observation": "Observation",
@@ -21,6 +23,81 @@ DEFAULT_PROPERTY_NAMES: dict[str, str] = {
     "related_information": "Related Information",
     "tags": "Tags",
 }
+
+_MAX_FILTER_TAGS = 5
+_TYPE_TAG_REJECT = frozenset(
+    {
+        "article",
+        "paper",
+        "book",
+        "news",
+        "newsletter",
+        "podcast",
+        "video",
+        "image",
+        "audio",
+        "meeting",
+        "reflection",
+        "project",
+        "report",
+        "concept",
+        "information",
+        "thinking",
+        "research",
+        "resource",
+        "workspace",
+        "pipeline",
+        "database",
+        "inbox",
+        "archived",
+        "insight",
+        "raw-text",
+        "raw-index",
+        "analysis",
+        "source",
+        "captured",
+        "ready",
+        "partial",
+        "failed",
+    }
+)
+
+
+def _normalize_tag_token(raw: str) -> str:
+    token = (raw or "").strip().lower()
+    if not token:
+        return ""
+    for prefix in ("type/", "source/", "topic/", "status/", "tag/", "#"):
+        if token.startswith(prefix):
+            token = token[len(prefix) :]
+    token = sanitize_filename(token).lower().replace("_", "-")
+    token = token.strip("-")
+    if not token or token in {"raw-text", "raw-index", "analysis", "source", "captured"}:
+        return ""
+    return token[:40]
+
+
+def normalize_filter_tags(
+    analysis_tags: list[str] | None = None,
+    *,
+    max_tags: int = _MAX_FILTER_TAGS,
+) -> list[str]:
+    """Light tags for notes — reject type/pipeline tokens; cap length."""
+    seen: set[str] = set()
+    ordered: list[str] = []
+    for raw in analysis_tags or []:
+        tag = _normalize_tag_token(raw)
+        if tag and tag not in seen:
+            ordered.append(tag)
+            seen.add(tag)
+    out: list[str] = []
+    for tag in ordered:
+        if tag in _TYPE_TAG_REJECT or "/" in tag:
+            continue
+        out.append(tag)
+        if len(out) >= max_tags:
+            break
+    return out
 
 
 def property_names(cfg: dict[str, Any] | None = None) -> dict[str, str]:
@@ -100,6 +177,15 @@ def extract_multi_select_prop(properties: dict[str, Any], name: str) -> list[str
     return out
 
 
+def extract_url_prop(properties: dict[str, Any], name: str) -> str:
+    prop = properties.get(name)
+    if not isinstance(prop, dict):
+        return ""
+    if prop.get("type") == "url":
+        return str(prop.get("url") or "").strip()
+    return ""
+
+
 def extract_relation_ids(properties: dict[str, Any], name: str) -> list[str]:
     prop = properties.get(name)
     if not isinstance(prop, dict) or prop.get("type") != "relation":
@@ -144,6 +230,9 @@ def normalize_page(
         connections.append(ThinkingConnection(title=rel_title, source_id=rel_id))
 
     tags = normalize_filter_tags(extract_multi_select_prop(props, names["tags"]))
+    page_type = extract_select_prop(props, names.get("page_type", "Type"))
+    source_url = extract_url_prop(props, names.get("source_url", "Source URL"))
+    status = extract_select_prop(props, names["status"])
 
     return ThinkingObject(
         title=title,
@@ -151,6 +240,8 @@ def normalize_page(
         source_id=str(page.get("id") or "").strip(),
         created_at=notion_datetime(page, created=True),
         updated_at=notion_datetime(page, created=False),
+        page_type=page_type,
+        source_url=source_url,
         raw_thought=extract_rich_text_prop(props, names["raw_thought"]),
         context=extract_rich_text_prop(props, names["context"]),
         observation=extract_rich_text_prop(props, names["observation"]),
@@ -161,7 +252,7 @@ def normalize_page(
         page_body=(page_body or "").strip(),
         connections=connections,
         tags=tags,
-        status=extract_select_prop(props, names["status"]),
+        status=status,
     )
 
 

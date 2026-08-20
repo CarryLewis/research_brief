@@ -37,6 +37,8 @@ def _page(
     edited: str = "2026-08-12T10:00:00.000Z",
     created: str = "2026-08-12T09:00:00.000Z",
     status: str = "developing",
+    page_type: str = "thinking",
+    source_url: str = "",
 ) -> dict:
     props = {
         "Name": {"id": "title", "type": "title", "title": _rich(title)},
@@ -45,6 +47,12 @@ def _page(
             "type": "select",
             "select": {"name": status} if status else None,
         },
+        "Type": {
+            "id": "ptype",
+            "type": "select",
+            "select": {"name": page_type} if page_type else None,
+        },
+        "Source URL": {"id": "url", "type": "url", "url": source_url or None},
         "Raw Thought": {"id": "raw", "type": "rich_text", "rich_text": _rich(raw)},
         "Context": {
             "id": "ctx",
@@ -452,19 +460,18 @@ def test_folder_create_move_rename_multi_owner_and_archive(db_session, vault_pat
         db_session, [folder, other, a, b], vault_path=str(vault_path)
     )
     assert r1.folders == 2
-    assert any("claimed by multiple folders" in w for w in r1.warnings)
-    # Lexicographically smallest folder title wins: "Another cluster" < "Vertigo cluster"
-    alpha = vault_path / "Thinking" / "Another cluster" / "Alpha.md"
+    assert any("multiple folders" in w for w in r1.warnings)
+    # Conflict: Alpha claimed by two folders → stays at Thinking/ root
+    alpha = vault_path / "Thinking" / "Alpha.md"
     beta = vault_path / "Thinking" / "Vertigo cluster" / "Beta.md"
     assert alpha.is_file()
     assert beta.is_file()
     assert (vault_path / "Thinking" / "Another cluster" / FOLDER_SIDECAR).is_file()
-    assert not (vault_path / "Thinking" / "Alpha.md").exists()
-    # Folder page body/props must not become a note
+    assert not (vault_path / "Thinking" / "Another cluster" / "Alpha.md").exists()
     assert not (vault_path / "Thinking" / "Vertigo cluster.md").exists()
     assert "Notion-only" not in beta.read_text(encoding="utf-8")
 
-    # Rename folder + remove Alpha membership from Vertigo (still in Another)
+    # Rename folder + remove Alpha membership from Vertigo (still only in Another)
     folder.title = "Vestibular cluster"
     folder.connections = [ThinkingConnection(title="Beta", source_id="id-b")]
     folder.updated_at = "2026-08-12T11:00:00.000Z"
@@ -474,6 +481,7 @@ def test_folder_create_move_rename_multi_owner_and_archive(db_session, vault_pat
     assert r2.renamed >= 1 or (vault_path / "Thinking" / "Vestibular cluster").is_dir()
     assert (vault_path / "Thinking" / "Vestibular cluster" / "Beta.md").is_file()
     assert not (vault_path / "Thinking" / "Vertigo cluster").exists()
+    assert (vault_path / "Thinking" / "Another cluster" / "Alpha.md").is_file()
 
     # Remove Alpha from all folders → back to Thinking root
     other.connections = []
@@ -596,3 +604,121 @@ def test_adapter_with_mocked_notion(db_session, vault_path: Path):
     assert "## Raw Thought" in md
     assert "## Extended Reflection" in md
     assert "错位感" in md
+
+
+def test_default_page_type_is_thinking():
+    page = _page("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa", "Untitled type")
+    obj = normalize_page(page)
+    assert obj.page_type == "thinking"
+    assert obj.is_thinking()
+
+
+def test_legacy_status_folder_becomes_type_folder():
+    page = _page(
+        "folder-legacy",
+        "Neurology",
+        status="folder",
+        page_type="",
+    )
+    obj = normalize_page(page)
+    assert obj.page_type == "folder"
+    assert obj.status == "connected"
+    assert obj.is_folder()
+
+
+def test_folder_creates_directory_not_markdown(db_session, vault_path: Path):
+    folder = ThinkingObject(
+        title="Neurology",
+        source_id="folder-1",
+        page_type="folder",
+        status="connected",
+        connections=[ThinkingConnection(title="Member Thought", source_id="think-1")],
+    )
+    member = ThinkingObject(
+        title="Member Thought",
+        source_id="think-1",
+        page_type="thinking",
+        raw_thought="inside folder",
+        status="developing",
+    )
+    result = apply_thinking_objects(
+        db_session, [folder, member], vault_path=str(vault_path)
+    )
+    assert result.errors == []
+    assert (vault_path / "Thinking" / "Neurology").is_dir()
+    assert not (vault_path / "Thinking" / "Neurology.md").exists()
+    note = vault_path / "Thinking" / "Neurology" / "Member Thought.md"
+    assert note.is_file()
+    assert "inside folder" in note.read_text(encoding="utf-8")
+
+
+def test_membership_conflict_leaves_thinking_at_root(db_session, vault_path: Path):
+    a = ThinkingObject(
+        title="Folder A",
+        source_id="fa",
+        page_type="folder",
+        connections=[ThinkingConnection(title="Shared", source_id="shared")],
+    )
+    b = ThinkingObject(
+        title="Folder B",
+        source_id="fb",
+        page_type="folder",
+        connections=[ThinkingConnection(title="Shared", source_id="shared")],
+    )
+    shared = ThinkingObject(
+        title="Shared",
+        source_id="shared",
+        page_type="thinking",
+        raw_thought="contested",
+    )
+    result = apply_thinking_objects(
+        db_session, [a, b, shared], vault_path=str(vault_path)
+    )
+    assert any("multiple folders" in w for w in result.warnings)
+    assert (vault_path / "Thinking" / "Shared.md").is_file()
+    assert not (vault_path / "Thinking" / "Folder A" / "Shared.md").exists()
+    assert not (vault_path / "Thinking" / "Folder B" / "Shared.md").exists()
+
+
+def test_book_and_article_are_skipped(db_session, vault_path: Path):
+    book = ThinkingObject(
+        title="In Hell's Kitchen",
+        source_id="book-1",
+        page_type="book",
+        source_url="https://example.com/book",
+        page_body="Reading notes.",
+        status="raw",
+    )
+    article = ThinkingObject(
+        title="Migraine pathways",
+        source_id="art-1",
+        page_type="article",
+        source_url="https://example.com/article",
+        raw_thought="Abstract snippet",
+        status="developing",
+    )
+    result = apply_thinking_objects(
+        db_session, [book, article], vault_path=str(vault_path)
+    )
+    assert result.errors == []
+    assert result.created == 0
+    assert any("skip book" in w for w in result.warnings)
+    assert any("skip article" in w for w in result.warnings)
+    assert not (vault_path / "Information").exists()
+    assert not list((vault_path / "Thinking").glob("*.md"))
+
+
+def test_normalize_type_and_source_url():
+    page = _page(
+        "bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb",
+        "Paper note",
+        page_type="article",
+        source_url="https://pubmed.example/1",
+        raw="body",
+    )
+    obj = normalize_page(page)
+    assert obj.page_type == "article"
+    assert obj.source_url == "https://pubmed.example/1"
+    assert "article" in obj.content_fingerprint()
+    assert "https://pubmed.example/1" in obj.content_fingerprint()
+

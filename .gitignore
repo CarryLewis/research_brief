@@ -7,19 +7,18 @@ venv/
 .env
 data/
 *.db
+!state/
+!state/thinking_sync.db
 
-# Node / Quartz
+# Node
 node_modules/
 frontend/dist/
 frontend/.vite/
-site/node_modules/
-site/public/
-site/.quartz-cache/
-# Generated from vault at build time (Quartz glob uses gitignore:false in util/glob.ts)
-site/content/**
-!site/content/README.md
-!site/content/.gitkeep
 .DS_Store
+
+# Obsidian runtime
+vault/.obsidian/workspace.json
+vault/.obsidian/workspace-mobile.json
 
 # IDE
 .idea/

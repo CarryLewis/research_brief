@@ -2,14 +2,14 @@
 #
 # Required repository secrets:
 #   NOTION_TOKEN
-#   NOTION_THINKING_DATABASE_ID
+# Optional:
+#   NOTION_THINKING_DATABASE_ID  (falls back to env default if unset)
 
 name: Thinking Vault Sync
 
 on:
   schedule:
-    # Every hour (UTC). Adjust as needed.
-    - cron: "0 * * * *"
+    - cron: "0 */6 * * *"
   workflow_dispatch:
     inputs:
       soft_archive_missing:
@@ -21,7 +21,7 @@ permissions:
   contents: write
 
 concurrency:
-  group: thinking-vault-sync
+  group: thinking-sync
   cancel-in-progress: false
 
 jobs:
@@ -44,41 +44,38 @@ jobs:
       - name: Install dependencies
         run: pip install -r backend/requirements.txt
 
-      - name: Restore Thinking sync SQLite cache
-        uses: actions/cache@v4
-        with:
-          path: data/research_brief.db
-          key: thinking-sync-db-${{ github.ref_name }}
-          restore-keys: |
-            thinking-sync-db-
-
       - name: Run Notion → vault sync
+        working-directory: backend
         env:
           NOTION_TOKEN: ${{ secrets.NOTION_TOKEN }}
           NOTION_THINKING_DATABASE_ID: ${{ secrets.NOTION_THINKING_DATABASE_ID }}
-          DEFAULT_VAULT_PATH: ${{ github.workspace }}/vault
-          DATA_DIR: ${{ github.workspace }}/data
-          PYTHONPATH: ${{ github.workspace }}/backend
+          THINKING_VAULT_PATH: ${{ github.workspace }}/vault
+          DATA_DIR: ${{ github.workspace }}/state
         run: |
           set -euo pipefail
-          if [ -z "${NOTION_TOKEN:-}" ] || [ -z "${NOTION_THINKING_DATABASE_ID:-}" ]; then
-            echo "Missing secrets NOTION_TOKEN and/or NOTION_THINKING_DATABASE_ID" >&2
+          if [ -z "${NOTION_TOKEN:-}" ]; then
+            echo "Missing secret NOTION_TOKEN" >&2
+            exit 1
+          fi
+          if [ -z "${NOTION_THINKING_DATABASE_ID:-}" ]; then
+            echo "Missing secret NOTION_THINKING_DATABASE_ID" >&2
             exit 1
           fi
           if [ "${{ github.event_name }}" = "workflow_dispatch" ] && [ "${{ inputs.soft_archive_missing }}" != "true" ]; then
-            python -m app.cli.thinking_sync --vault "$DEFAULT_VAULT_PATH" --no-archive-missing
+            python -m app.cli.thinking_sync --vault "$THINKING_VAULT_PATH" --no-archive-missing
           else
-            python -m app.cli.thinking_sync --vault "$DEFAULT_VAULT_PATH"
+            python -m app.cli.thinking_sync --vault "$THINKING_VAULT_PATH"
           fi
 
-      - name: Commit vault changes
+      - name: Commit vault and sync index
         run: |
           set -euo pipefail
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add -A vault
+          git add vault
+          git add -f state/thinking_sync.db
           if git diff --staged --quiet; then
-            echo "No vault changes to commit."
+            echo "No vault or index changes to commit."
             exit 0
           fi
           git commit -m "chore(thinking): sync Notion Thinking Vault [skip ci]"

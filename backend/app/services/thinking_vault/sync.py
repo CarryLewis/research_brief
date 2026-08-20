@@ -1,8 +1,8 @@
 """Thinking Vault sync engine: Adapter → Normalizer → Writer (idempotent).
 
-Two-phase write for Status=folder:
+Two-phase write for Type=folder:
 1. Create / rename real directories (and nest folders via Related Information)
-2. Place ordinary notes under their owning folder (or notes root)
+2. Place thinking notes under their owning folder (or Thinking/ root)
 """
 
 from __future__ import annotations
@@ -15,8 +15,9 @@ from typing import Any
 from sqlalchemy.orm import Session
 
 from ...db import ThinkingSyncState, utcnow
-from ...utils import content_hash, workspace_config_dict
+from ...utils import content_hash
 from .adapter import NotionThinkingAdapter
+from .membership import build_folder_membership
 from .model import ThinkingObject
 from .notion_client import NotionAPIError, NotionClient
 from .writer import (
@@ -26,7 +27,6 @@ from .writer import (
     archive_thinking_note,
     iter_thinking_folders,
     iter_thinking_notes,
-    notes_root,
     read_folder_sidecar,
     read_note_source_id,
     thinking_vault_cfg,
@@ -102,166 +102,18 @@ def _upsert_state(
     return row
 
 
-def _norm_id(value: str) -> str:
-    return (value or "").replace("-", "").strip().lower()
-
-
-def _pick_lex_smallest(
-    candidates: list[tuple[str, ThinkingObject]],
-) -> ThinkingObject:
-    """Pick owning folder by lexicographically smallest title, then source_id."""
-    return sorted(candidates, key=lambda item: (item[1].title.casefold(), item[0]))[0][1]
-
-
-def build_membership(
-    folders: list[ThinkingObject],
-    notes: list[ThinkingObject],
-    *,
-    warnings: list[str],
-) -> tuple[dict[str, str], dict[str, str], list[str]]:
-    """Return (note_id→folder_id, child_folder_id→parent_folder_id, cycle_errors).
-
-    Multi-membership: keep the folder with the lexicographically smallest title.
-    """
-    folder_by_id: dict[str, ThinkingObject] = {f.source_id: f for f in folders}
-    folder_by_norm: dict[str, ThinkingObject] = {
-        _norm_id(f.source_id): f for f in folders
-    }
-    note_ids = {n.source_id for n in notes}
-    note_norms = {_norm_id(n.source_id): n.source_id for n in notes}
-
-    note_claims: dict[str, list[tuple[str, ThinkingObject]]] = {}
-    folder_claims: dict[str, list[tuple[str, ThinkingObject]]] = {}
-
-    for folder in folders:
-        for conn in folder.connections:
-            cid = (conn.source_id or "").strip()
-            if not cid:
-                continue
-            target_folder = folder_by_id.get(cid) or folder_by_norm.get(_norm_id(cid))
-            if target_folder is not None:
-                if target_folder.source_id == folder.source_id:
-                    continue
-                folder_claims.setdefault(target_folder.source_id, []).append(
-                    (folder.source_id, folder)
-                )
-                continue
-            note_id = cid if cid in note_ids else note_norms.get(_norm_id(cid))
-            if note_id:
-                note_claims.setdefault(note_id, []).append((folder.source_id, folder))
-
-    note_owner: dict[str, str] = {}
-    for note_id, claims in note_claims.items():
-        unique: dict[str, ThinkingObject] = {fid: obj for fid, obj in claims}
-        if len(unique) > 1:
-            titles = ", ".join(sorted(o.title for o in unique.values()))
-            warnings.append(
-                f"note {note_id} claimed by multiple folders ({titles}); "
-                "using lexicographically smallest title"
-            )
-        owner = _pick_lex_smallest(list(unique.items()))
-        note_owner[note_id] = owner.source_id
-
-    parent_of: dict[str, str] = {}
-    for child_id, claims in folder_claims.items():
-        unique: dict[str, ThinkingObject] = {fid: obj for fid, obj in claims}
-        if len(unique) > 1:
-            titles = ", ".join(sorted(o.title for o in unique.values()))
-            warnings.append(
-                f"folder {child_id} claimed by multiple parents ({titles}); "
-                "using lexicographically smallest title"
-            )
-        owner = _pick_lex_smallest(list(unique.items()))
-        parent_of[child_id] = owner.source_id
-
-    # Drop edges that create cycles.
-    cycle_errors: list[str] = []
-    cleaned: dict[str, str] = {}
-    for child, parent in parent_of.items():
-        seen = {child}
-        cur = parent
-        cyclic = False
-        while cur:
-            if cur in seen:
-                cyclic = True
-                break
-            seen.add(cur)
-            cur = parent_of.get(cur, "")
-        if cyclic:
-            cycle_errors.append(
-                f"folder nesting cycle involving {child}; nesting edge skipped"
-            )
-            continue
-        cleaned[child] = parent
-
-    return note_owner, cleaned, cycle_errors
-
-
-def _folder_parent_rel(
-    folder_id: str,
-    *,
-    parent_of: dict[str, str],
-    folder_paths: dict[str, str],
-    notes_base: Path,
-    vault: Path,
-) -> str:
-    parent_id = parent_of.get(folder_id)
-    if not parent_id:
+def _rel_under_root(path_str: str, root: str) -> str:
+    """Return path_str relative to vault root folder (e.g. Thinking)."""
+    if not path_str:
         return ""
-    parent_path = folder_paths.get(parent_id)
-    if not parent_path:
-        return ""
-    abs_parent = vault / parent_path
+    rel = Path(path_str)
     try:
-        return str(abs_parent.relative_to(notes_base))
+        rel = rel.relative_to(root)
     except ValueError:
+        pass
+    if rel == Path("."):
         return ""
-
-
-def _note_parent_rel(
-    note_id: str,
-    *,
-    note_owner: dict[str, str],
-    folder_paths: dict[str, str],
-    notes_base: Path,
-    vault: Path,
-) -> str:
-    folder_id = note_owner.get(note_id)
-    if not folder_id:
-        return ""
-    folder_path = folder_paths.get(folder_id)
-    if not folder_path:
-        return ""
-    abs_folder = vault / folder_path
-    try:
-        return str(abs_folder.relative_to(notes_base))
-    except ValueError:
-        return ""
-
-
-def _topo_folder_order(
-    folders: list[ThinkingObject],
-    parent_of: dict[str, str],
-) -> list[ThinkingObject]:
-    """Parents before children."""
-    by_id = {f.source_id: f for f in folders}
-    remaining = set(by_id)
-    ordered: list[ThinkingObject] = []
-    while remaining:
-        progressed = False
-        for fid in sorted(remaining, key=lambda i: by_id[i].title.casefold()):
-            parent = parent_of.get(fid)
-            if parent and parent in remaining:
-                continue
-            ordered.append(by_id[fid])
-            remaining.remove(fid)
-            progressed = True
-        if not progressed:
-            # Cycle residue — append remaining stably
-            for fid in sorted(remaining, key=lambda i: by_id[i].title.casefold()):
-                ordered.append(by_id[fid])
-            break
-    return ordered
+    return str(rel)
 
 
 def hydrate_sync_state_from_vault(
@@ -276,7 +128,7 @@ def hydrate_sync_state_from_vault(
     still work across workflow runs when the DB cache is cold.
     """
     vault = Path(vault_path).expanduser()
-    cfg = cfg or workspace_config_dict()
+    cfg = cfg or {}
     archive = archive_root(vault, cfg)
     seeded = 0
 
@@ -339,34 +191,40 @@ def apply_thinking_objects(
     soft_archive_missing: bool = True,
     cfg: dict | None = None,
 ) -> SyncResult:
-    """Write Thinking objects to the vault and update sync state."""
-    cfg = cfg or workspace_config_dict()
+    """Write Thinking / folder objects to the vault and update sync state."""
+    cfg = cfg or {}
     result = SyncResult()
     vault = Path(vault_path).expanduser()
-    notes_base = notes_root(vault, cfg)
+    tv = thinking_vault_cfg(cfg)
+    thinking_root = str(tv.get("folder") or "Thinking")
     hydrate_sync_state_from_vault(db, vault, cfg=cfg)
 
+    membership = build_folder_membership(objects, thinking_root=thinking_root)
+    result.warnings.extend(membership.warnings)
+
     folders = [o for o in objects if o.is_folder() and o.source_id]
-    notes = [o for o in objects if not o.is_folder() and o.source_id]
+    folders.sort(
+        key=lambda o: membership.folder_dirs.get(o.source_id, o.title).count("/")
+    )
+    notes = [o for o in objects if o.is_thinking() and o.source_id]
     seen_ids: set[str] = {o.source_id for o in objects if o.source_id}
 
-    note_owner, parent_of, cycle_errors = build_membership(
-        folders, notes, warnings=result.warnings
-    )
-    result.errors.extend(cycle_errors)
+    for obj in objects:
+        if obj.source_id and obj.is_information():
+            result.warnings.append(
+                f"skip {obj.page_type} page {obj.source_id} ({obj.title}); "
+                "Information sync is out of this Thinking Vault runtime"
+            )
 
     folder_paths: dict[str, str] = {}
-    for obj in _topo_folder_order(folders, parent_of):
+    for obj in folders:
         state = _get_state(db, obj.source_id)
         prev_path = state.vault_path if state and state.status == "active" else None
         prev_hash = state.content_hash if state else None
-        parent_rel = _folder_parent_rel(
-            obj.source_id,
-            parent_of=parent_of,
-            folder_paths=folder_paths,
-            notes_base=notes_base,
-            vault=vault,
-        )
+        folder_dir = membership.folder_dirs.get(obj.source_id) or f"{thinking_root}/{obj.title}"
+        rel = _rel_under_root(folder_dir, thinking_root)
+        parent = Path(rel)
+        parent_rel = "" if parent.parent == Path(".") or not rel else str(parent.parent)
         try:
             write = write_thinking_folder(
                 vault_path,
@@ -398,6 +256,7 @@ def apply_thinking_objects(
             {
                 "source_id": obj.source_id,
                 "title": obj.title,
+                "page_type": obj.page_type,
                 "vault_path": write.vault_path,
                 "action": write.action,
                 "kind": "folder",
@@ -408,13 +267,8 @@ def apply_thinking_objects(
         state = _get_state(db, obj.source_id)
         prev_path = state.vault_path if state and state.status == "active" else None
         prev_hash = state.content_hash if state else None
-        parent_rel = _note_parent_rel(
-            obj.source_id,
-            note_owner=note_owner,
-            folder_paths=folder_paths,
-            notes_base=notes_base,
-            vault=vault,
-        )
+        target = membership.thinking_dirs.get(obj.source_id, thinking_root)
+        parent_rel = _rel_under_root(target, thinking_root)
         try:
             write = write_thinking_note(
                 vault_path,
@@ -444,6 +298,7 @@ def apply_thinking_objects(
             {
                 "source_id": obj.source_id,
                 "title": obj.title,
+                "page_type": obj.page_type,
                 "vault_path": write.vault_path,
                 "action": write.action,
                 "kind": "note",
@@ -523,11 +378,7 @@ def sync_from_notion(
     soft_archive_missing: bool = True,
 ) -> SyncResult:
     """Full Notion → Obsidian Thinking sync."""
-    cfg = workspace_config_dict()
-    tv = thinking_vault_cfg(cfg)
-    property_cfg = {
-        "property_names": tv.get("property_names") or {},
-    }
+    property_cfg: dict[str, Any] = {}
     owns = client is None
     notion = client or NotionClient(token)
     try:
@@ -553,7 +404,6 @@ def sync_from_notion(
             objects,
             vault_path=vault_path,
             soft_archive_missing=soft_archive_missing,
-            cfg=cfg,
         )
     except NotionAPIError as exc:
         logger.error("Thinking sync Notion failure: %s", exc)

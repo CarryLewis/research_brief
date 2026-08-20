@@ -1,1 +1,1 @@
-"""Research Brief Studio backend package."""
+"""Thinking Vault backend — Notion → Obsidian sync."""
