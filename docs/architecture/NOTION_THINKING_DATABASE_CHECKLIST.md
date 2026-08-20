@@ -1,7 +1,7 @@
 # Notion Thinking Database — Manual Setup Checklist
 
 **Purpose:** Create the Notion database that Thinking Vault V1 syncs from.  
-**Contract:** Property columns are the content source of truth. Page body is not synced in V1.
+**Contract:** Property columns are the structured content source of truth. Page body is also synced (as `## Extended Reflection`). See [`THINKING_VAULT_ARCHITECTURE.md`](THINKING_VAULT_ARCHITECTURE.md) §3.1.
 
 Do **not** auto-create this schema from the API in V1 — set it up once by hand.
 
