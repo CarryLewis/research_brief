@@ -4,6 +4,8 @@
 **Date:** 2026-08  
 **Scope:** Feasibility, architecture choices, gaps, milestones. Not implementation.
 
+> **Audit 2026-08-20:** Several “缺口” rows in §3 are historical. `extension/` (MV3), `library_writer` → `Information/`, `POST /api/library/save`, and Quartz `site/` already exist on `main`. Treat §3 / §9 as the original plan, not a live inventory. Current map: [`architecture/STATUS_AND_PLANNING.md`](architecture/STATUS_AND_PLANNING.md).
+
 > **Product SoT:** [`PRODUCT_v1.md`](PRODUCT_v1.md)  
 > **This document:** how (and how far) we can technically deliver that product, especially vs Matter.  
 > **[`ARCHITECTURE.md`](ARCHITECTURE.md):** historical Knowledge OS stack. Capture-must-not-write-vault and Website-as-non-goal are **reversed** for v1 engineering; do not implement Library against both docs as if they agreed.

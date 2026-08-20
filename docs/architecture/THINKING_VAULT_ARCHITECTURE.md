@@ -78,6 +78,8 @@ Extension / URL → POST /api/library/save → Library/Articles|Emails|Books
 
 ### 1.4 Missing (must build)
 
+> **Audit 2026-08-20:** The list below was the V1 gap analysis. On `main` these modules exist (`backend/app/services/thinking_vault/`, CLI, `POST /api/thinking/sync`, GitHub Actions). Remaining work is Phase 6–7 (graph wiring, website as consumer) — see [`STATUS_AND_PLANNING.md`](STATUS_AND_PLANNING.md). Keep this subsection as historical context; do not treat it as a current backlog.
+
 - Notion API client / adapter
 - Thinking Normalizer + canonical Thinking Object contract
 - Dedicated Obsidian Writer targeting `Thinking/`

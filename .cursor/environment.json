@@ -1,0 +1,4 @@
+{
+  "name": "notion-obsidian-connect",
+  "install": "set -euo pipefail\nif ! python3 -c 'import venv, ensurepip' 2>/dev/null; then\n  sudo apt-get update -qq\n  sudo apt-get install -y python3-venv python3-pip\nfi\npython3 -m venv backend/.venv\nbackend/.venv/bin/pip install -U pip\nbackend/.venv/bin/pip install -r backend/requirements.txt\nif [ -f site/package-lock.json ]; then (cd site && npm ci); fi\n"
+}

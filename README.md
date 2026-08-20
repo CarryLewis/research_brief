@@ -2,6 +2,8 @@
 
 **Thinking Vault (priority):** [`docs/architecture/THINKING_VAULT_ARCHITECTURE.md`](docs/architecture/THINKING_VAULT_ARCHITECTURE.md) — Notion property columns → `Thinking/*.md` one-way sync.
 
+**Shipped vs planned (audit):** [`docs/architecture/STATUS_AND_PLANNING.md`](docs/architecture/STATUS_AND_PLANNING.md) · Cloud Agent bootstrap: [`.cursor/environment.json`](.cursor/environment.json)
+
 **Obsidian-facing architecture:** [`docs/architecture/OBSIDIAN_CONSTITUTION_V1_1.md`](docs/architecture/OBSIDIAN_CONSTITUTION_V1_1.md)  
 **System architecture (Lake / KO / Lifecycle / Graph Engine):** [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md)  
 **Product Capture · Annotate · Publish:** [`docs/PRODUCT_v1.md`](docs/PRODUCT_v1.md)
